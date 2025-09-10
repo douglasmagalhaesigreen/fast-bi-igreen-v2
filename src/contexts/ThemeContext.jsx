@@ -4,12 +4,10 @@ export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Verificar preferência salva no localStorage
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme;
-    }
-    // Verificar preferência do sistema
+    console.log('Tema inicial:', savedTheme || 'light');
+    if (savedTheme) return savedTheme;
+    
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
@@ -17,30 +15,30 @@ export const ThemeProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    // Aplicar classe ao elemento root
+    console.log('Mudando tema para:', theme);
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
     
-    // Salvar preferência no localStorage
+    // Remover ambas as classes primeiro
+    root.classList.remove('light', 'dark');
+    
+    // Adicionar a classe do tema atual
+    root.classList.add(theme);
+    
+    // Salvar no localStorage
     localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
-  const value = {
-    theme,
-    setTheme,
-    toggleTheme
+    console.log('Toggle theme chamado, tema atual:', theme);
+    setTheme(prevTheme => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
+      console.log('Novo tema será:', newTheme);
+      return newTheme;
+    });
   };
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
