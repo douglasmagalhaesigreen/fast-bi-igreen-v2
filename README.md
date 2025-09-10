@@ -1,60 +1,69 @@
-Fast BI iGreen v2
-Sistema de Business Intelligence para monitoramento de dados da iGreen Energy.
+-----
 
-O Fast BI iGreen v2 é uma plataforma de Business Intelligence projetada para visualizar e analisar métricas de consumo de energia, faturamento e clientes em tempo real. A aplicação conta com um backend robusto em Python (Flask) e um frontend moderno e interativo em React (Vite).
+# Fast BI iGreen v2
 
-✨ Principais Funcionalidades
-Dashboard Principal: Visualização consolidada dos principais KPIs (kWh vendido, clientes, faturamento).
+**Sistema de Business Intelligence para monitoramento de dados da iGreen Energy.**
 
-Dashboard para TV: Modo de exibição otimizado para telas grandes, com rotação automática de métricas e atualização em tempo real.
+-----
 
-Autenticação Segura: Sistema de login com Tokens JWT (Access e Refresh).
+[](https://www.google.com/search?q=https://github.com/douglasmsigreen/fast-bi-igreen-v2/actions/workflows/ci.yml)
+[](https://opensource.org/licenses/MIT)
 
-Tema Dinâmico: Suporte para modo Claro (Light) e Escuro (Dark).
+O **Fast BI iGreen v2** é uma plataforma de Business Intelligence projetada para visualizar e analisar métricas de consumo de energia, faturamento e clientes em tempo real. A aplicação conta com um backend robusto em Python (Flask) e um frontend moderno e interativo em React (Vite).
 
-Rotas Protegidas: Acesso seguro às páginas internas da aplicação.
+## ✨ Principais Funcionalidades
 
-Estrutura Modular: Código organizado para facilitar a manutenção e escalabilidade.
+  - **Dashboard Principal:** Visualização consolidada dos principais KPIs (kWh vendido, clientes, faturamento).
+  - **Dashboard para TV:** Modo de exibição otimizado para telas grandes, com rotação automática de métricas e atualização em tempo real.
+  - **Autenticação Segura:** Sistema de login com Tokens JWT (Access e Refresh).
+  - **Tema Dinâmico:** Suporte para modo Claro (Light) e Escuro (Dark).
+  - **Rotas Protegidas:** Acesso seguro às páginas internas da aplicação.
+  - **Estrutura Modular:** Código organizado para facilitar a manutenção e escalabilidade.
 
-🛠️ Tecnologias Utilizadas
-Área	Tecnologia
-Frontend	React 19 com Vite, Tailwind CSS, React Router, Chart.js (gráficos), Framer Motion (animações), Lucide React (ícones)
-Backend	Python com Flask, SQLAlchemy (ORM), PostgreSQL (Banco de Dados), Flask-JWT-Extended (Autenticação), Gunicorn (Servidor WSGI)
-DevOps	ESLint (Qualidade de Código), GitHub Actions (CI/CD)
+## 🛠️ Tecnologias Utilizadas
 
-Exportar para as Planilhas
-🚀 Configuração do Ambiente
+| Área      | Tecnologia                                                                                                                                                                                                                                              |
+| :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Frontend** | **React 19** com **Vite**, **Tailwind CSS**, **React Router**, **Chart.js** (gráficos), **Framer Motion** (animações), **Lucide React** (ícones) |
+| **Backend** | **Python** com **Flask**, **SQLAlchemy** (ORM), **PostgreSQL** (Banco de Dados), **Flask-JWT-Extended** (Autenticação), **Gunicorn** (Servidor WSGI)      |
+| **DevOps** | **ESLint** (Qualidade de Código), **GitHub Actions** (CI/CD)                                                                                                                                                                                            |
+
+## 🚀 Configuração do Ambiente
+
 Siga os passos abaixo para configurar e executar o projeto localmente.
 
-Pré-requisitos
-Node.js: v18.0 ou superior.
+### Pré-requisitos
 
-Python: v3.9 ou superior.
+  - **Node.js**: `v18.0` ou superior.
+  - **Python**: `v3.9` ou superior.
+  - **PostgreSQL**: Instância local ou remota acessível.
 
-PostgreSQL: Instância local ou remota acessível.
+### 1\. Clonar o Repositório
 
-1. Clonar o Repositório
-Bash
-
+```bash
 git clone https://github.com/seu-usuario/fast-bi-igreen-v2.git
 cd fast-bi-igreen-v2
-2. Configurar Variáveis de Ambiente
-O projeto utiliza arquivos .env para gerenciar as variáveis de ambiente. Existem scripts para facilitar a criação deles.
+```
+
+### 2\. Configurar Variáveis de Ambiente
+
+O projeto utiliza arquivos `.env` para gerenciar as variáveis de ambiente. Existem scripts para facilitar a criação deles.
 
 Execute o seguinte comando na raiz do projeto:
 
-Bash
-
+```bash
 bash setup-commands.sh
-Este comando criará os arquivos .env necessários para o frontend e o backend. Revise os arquivos gerados para garantir que as credenciais do banco de dados e outras chaves estão corretas.
+```
 
-Importante: Os arquivos .env não devem ser versionados no Git.
+Este comando criará os arquivos `.env` necessários para o frontend e o backend. **Revise os arquivos gerados** para garantir que as credenciais do banco de dados e outras chaves estão corretas.
 
-3. Configurar e Iniciar o Backend
-Abra um novo terminal e navegue até a pasta server.
+**Importante:** Os arquivos `.env` não devem ser versionados no Git.
 
-Bash
+### 3\. Configurar e Iniciar o Backend
 
+Abra um **novo terminal** e navegue até a pasta `server`.
+
+```bash
 # 1. Navegue para a pasta do servidor
 cd server
 
@@ -67,43 +76,33 @@ pip install -r requirements.txt
 
 # 4. Inicie o servidor Flask
 python run.py
-O backend estará rodando em http://localhost:5000.
+```
 
-4. Configurar e Iniciar o Frontend
-Volte para o terminal original (na raiz do projeto).
+O backend estará rodando em `http://localhost:5000`.
 
-Bash
+### 4\. Configurar e Iniciar o Frontend
 
+Volte para o **terminal original** (na raiz do projeto).
+
+```bash
 # 1. Instale as dependências do Node.js
 npm install
 
 # 2. Inicie o servidor de desenvolvimento Vite
 npm run dev
-O frontend estará acessível em http://localhost:4200.
+```
 
-📜 Scripts Disponíveis
+O frontend estará acessível em `http://localhost:4200`.
+
+## 📜 Scripts Disponíveis
+
 Na pasta raiz do projeto, você pode executar os seguintes scripts:
 
-npm run dev: Inicia o servidor de desenvolvimento do frontend.
+  - `npm run dev`: Inicia o servidor de desenvolvimento do frontend.
+  - `npm run build`: Compila o projeto frontend para produção.
+  - `npm run lint`: Executa o ESLint para analisar a qualidade do código.
+  - `npm run preview`: Inicia um servidor local para visualizar a build de produção.
 
-npm run build: Compila o projeto frontend para produção.
+## 📝 Licença
 
-npm run lint: Executa o ESLint para analisar a qualidade do código.
-
-npm run preview: Inicia um servidor local para visualizar a build de produção.
-
-🤝 Contribuição
-Contribuições são bem-vindas! Se você deseja melhorar o projeto, por favor, siga os passos:
-
-Faça um Fork do repositório.
-
-Crie uma nova branch (git checkout -b feature/sua-feature).
-
-Faça o commit de suas mudanças (git commit -m 'Adiciona nova feature').
-
-Envie para a sua branch (git push origin feature/sua-feature).
-
-Abra um Pull Request.
-
-📝 Licença
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
