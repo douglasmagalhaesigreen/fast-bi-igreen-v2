@@ -225,7 +225,14 @@ const MainLayout = () => {
           </Link>
 
           {/* Toggle Sidebar (reposicionado acima do container de sair) */}
-          <div className='mt-auto pt-2 flex justify-center'>
+          {/* Espaço para empurrar o botão inferior */}
+          <div className='mt-auto' />
+
+        </nav>
+
+        {/* Bottom Section apenas com botão de expandir/recolher */}
+        <div className='p-4 border-t dark:border-gray-700'>
+          <div className='flex justify-center'>
             <button
               onClick={toggleSidebar}
               aria-label={sidebarExpanded ? 'Recolher menu lateral' : 'Expandir menu lateral'}
@@ -248,36 +255,6 @@ const MainLayout = () => {
               </motion.div>
             </button>
           </div>
-
-        </nav>
-
-  {/* User / Bottom Section */}
-  <div className='p-4 border-t dark:border-gray-700'>
-          <button
-            onClick={handleLogout}
-            className={`
-              flex items-center space-x-3 px-3 py-2 rounded-lg w-full
-              text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20
-              hover:text-red-600 dark:hover:text-red-400 transition-all duration-200
-              ${!sidebarExpanded ? 'justify-center' : ''}
-            `}
-            title={!sidebarExpanded ? 'Sair' : ''}
-          >
-            <LogOut className='w-5 h-5 flex-shrink-0' />
-            <AnimatePresence>
-              {sidebarExpanded && (
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className='font-medium whitespace-nowrap'
-                >
-                  Sair
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
         </div>
 
   {/* Botão de toggle removido da posição absoluta original */}
