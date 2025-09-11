@@ -5,7 +5,7 @@ import {
   Tv, Sun, Moon, LogOut, User, Menu, X,
   ChevronLeft, ChevronRight, Bell, Search, Zap
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './hooks/useTheme';
 import DashboardTV from './pages/DashboardTV';
