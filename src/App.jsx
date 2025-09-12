@@ -5,7 +5,7 @@ import {
   Tv, Sun, Moon, LogOut, User, Menu, X,
   ChevronLeft, ChevronRight, Bell, Search, Zap
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './hooks/useTheme';
 import DashboardTV from './pages/DashboardTV';
@@ -175,7 +175,7 @@ const MainLayout = () => {
   return (
     <div className='min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 flex'>
       {/* Sidebar */}
-      <motion.aside
+      <Motion.aside
         initial={false}
         animate={{ width: sidebarExpanded ? 256 : 80 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -184,7 +184,7 @@ const MainLayout = () => {
         {/* Logo e Toggle */}
         <div className='p-4 border-b dark:border-gray-700'>
           <div className='flex items-center justify-between'>
-            <motion.div 
+            <Motion.div 
               className='flex items-center space-x-3'
               animate={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center' }}
             >
@@ -193,7 +193,7 @@ const MainLayout = () => {
               </div>
               <AnimatePresence>
                 {sidebarExpanded && (
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
@@ -202,10 +202,10 @@ const MainLayout = () => {
                     <h2 className='text-lg font-bold text-gray-800 dark:text-white whitespace-nowrap'>
                       Fast BI iGreen
                     </h2>
-                  </motion.div>
+                  </Motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </Motion.div>
           </div>
         </div>
 
@@ -232,7 +232,7 @@ const MainLayout = () => {
                 <Icon className='w-5 h-5 flex-shrink-0' />
                 <AnimatePresence>
                   {sidebarExpanded && (
-                    <motion.span
+                    <Motion.span
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
@@ -240,7 +240,7 @@ const MainLayout = () => {
                       className='font-medium whitespace-nowrap'
                     >
                       {item.label}
-                    </motion.span>
+                    </Motion.span>
                   )}
                 </AnimatePresence>
               </Link>
@@ -261,7 +261,7 @@ const MainLayout = () => {
             <Tv className='w-5 h-5 flex-shrink-0' />
             <AnimatePresence>
               {sidebarExpanded && (
-                <motion.span
+                <Motion.span
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
@@ -269,7 +269,7 @@ const MainLayout = () => {
                   className='font-medium whitespace-nowrap'
                 >
                   Dashboard TV
-                </motion.span>
+                </Motion.span>
               )}
             </AnimatePresence>
           </Link>
@@ -289,7 +289,7 @@ const MainLayout = () => {
               title={sidebarExpanded ? 'Recolher menu' : 'Expandir menu'}
               className='group relative p-2 rounded-full transition-colors duration-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none'
             >
-              <motion.div
+              <Motion.div
                 key={sidebarExpanded ? 'expanded' : 'collapsed'}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -302,13 +302,13 @@ const MainLayout = () => {
                 ) : (
                   <ChevronRight className='w-5 h-5' />
                 )}
-              </motion.div>
+              </Motion.div>
             </button>
           </div>
         </div>
 
   {/* Botão de toggle removido da posição absoluta original */}
-      </motion.aside>
+      </Motion.aside>
 
       {/* Main Content */}
       <div className='flex-1 flex flex-col'>
@@ -368,7 +368,7 @@ const MainLayout = () => {
                 
                 <AnimatePresence>
                   {showUserMenu && (
-                    <motion.div
+                    <Motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -397,7 +397,7 @@ const MainLayout = () => {
                         <LogOut className='w-4 h-4 mr-2' />
                         Sair
                       </button>
-                    </motion.div>
+                    </Motion.div>
                   )}
                 </AnimatePresence>
               </div>
