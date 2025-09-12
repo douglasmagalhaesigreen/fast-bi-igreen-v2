@@ -11,45 +11,95 @@ import { useTheme } from './hooks/useTheme';
 import DashboardTV from './pages/DashboardTV';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import LineChartComponent from './components/charts/LineChartComponent';
+import BarChartComponent from './components/charts/BarChartComponent';
+import PieChartComponent from './components/charts/PieChartComponent';
 
 // Componentes das páginas
-const Dashboard = () => (
-  <div className='p-8'>
-    <h1 className='text-3xl font-bold text-gray-800 dark:text-white mb-6'>Dashboard Principal</h1>
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Total kWh</h2>
-        <p className='text-3xl font-bold text-green-600 dark:text-green-400'>1,234,567</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+12% desde o último mês</p>
+const Dashboard = () => {
+  // Dados para os gráficos
+  const consumoMensal = [
+    { mes: 'Jan', consumo: 420, meta: 400 },
+    { mes: 'Fev', consumo: 380, meta: 400 },
+    { mes: 'Mar', consumo: 450, meta: 420 },
+    { mes: 'Abr', consumo: 490, meta: 450 },
+    { mes: 'Mai', consumo: 520, meta: 480 },
+    { mes: 'Jun', consumo: 480, meta: 500 },
+  ];
+
+  const dadosRegionais = [
+    { regiao: 'Norte', clientes: 120, consumo: 380 },
+    { regiao: 'Nordeste', clientes: 280, consumo: 720 },
+    { regiao: 'Centro-Oeste', clientes: 95, consumo: 290 },
+    { regiao: 'Sudeste', clientes: 340, consumo: 980 },
+    { regiao: 'Sul', clientes: 157, consumo: 440 },
+  ];
+
+  // Dados para o gráfico de pizza
+  const distribuicaoTipo = [
+    { name: 'Residencial', value: 45 },
+    { name: 'Comercial', value: 35 },
+    { name: 'Industrial', value: 20 },
+  ];
+
+  return (
+    <div className='p-8'>
+      <h1 className='text-3xl font-bold text-gray-800 dark:text-white mb-6'>Dashboard Principal</h1>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Total kWh</h2>
+          <p className='text-3xl font-bold text-green-600 dark:text-green-400'>1,234,567</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+12% desde o último mês</p>
+        </div>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Clientes Ativos</h2>
+          <p className='text-3xl font-bold text-blue-600 dark:text-blue-400'>892</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+45 novos este mês</p>
+        </div>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Faturamento</h2>
+          <p className='text-3xl font-bold text-purple-600 dark:text-purple-400'>R$ 2.456.789</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+8% desde o último mês</p>
+        </div>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Eficiência</h2>
+          <p className='text-3xl font-bold text-orange-600 dark:text-orange-400'>94.5%</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Meta: 95%</p>
+        </div>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Consumo Médio</h2>
+          <p className='text-3xl font-bold text-pink-600 dark:text-pink-400'>342 kWh</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Por cliente/mês</p>
+        </div>
+        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
+          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Alertas</h2>
+          <p className='text-3xl font-bold text-red-600 dark:text-red-400'>3</p>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Requerem atenção</p>
+        </div>
       </div>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Clientes Ativos</h2>
-        <p className='text-3xl font-bold text-blue-600 dark:text-blue-400'>892</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+45 novos este mês</p>
+
+      {/* Gráficos */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6'>
+        <LineChartComponent 
+          data={consumoMensal} 
+          title="Evolução do Consumo Mensal" 
+        />
+        <BarChartComponent 
+          data={dadosRegionais} 
+          title="Distribuição por Região" 
+        />
       </div>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Faturamento</h2>
-        <p className='text-3xl font-bold text-purple-600 dark:text-purple-400'>R$ 2.456.789</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+8% desde o último mês</p>
-      </div>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Eficiência</h2>
-        <p className='text-3xl font-bold text-orange-600 dark:text-orange-400'>94.5%</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Meta: 95%</p>
-      </div>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Consumo Médio</h2>
-        <p className='text-3xl font-bold text-pink-600 dark:text-pink-400'>342 kWh</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Por cliente/mês</p>
-      </div>
-      <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-        <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Alertas</h2>
-        <p className='text-3xl font-bold text-red-600 dark:text-red-400'>3</p>
-        <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>Requerem atenção</p>
+
+      {/* Gráfico de Pizza */}
+      <div className='mt-6'>
+        <PieChartComponent 
+          data={distribuicaoTipo} 
+          title="Distribuição por Tipo de Cliente" 
+        />
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Reports = () => (
   <div className='p-8'>
