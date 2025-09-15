@@ -124,44 +124,59 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
-      {/* Background animado */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -inset-10 opacity-20">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full bg-green-500"
-              style={{
-                width: Math.random() * 400 + 100,
-                height: Math.random() * 400 + 100,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                x: [0, Math.random() * 100 - 50],
-                y: [0, Math.random() * 100 - 50],
-                scale: [1, 1.2, 1],
-              }}
-              transition={{
-                duration: Math.random() * 10 + 10,
-                repeat: Infinity,
-                repeatType: "reverse",
-              }}
-            />
-          ))}
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
+      {/* Background animado - REINTEGRADO */}
+      <div className="absolute inset-0 opacity-20 z-0">
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-green-500"
+            style={{
+              width: Math.random() * 400 + 100,
+              height: Math.random() * 400 + 100,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              x: [0, Math.random() * 100 - 50],
+              y: [0, Math.random() * 100 - 50],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+        ))}
       </div>
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="w-full max-w-md relative z-10"
-      >
-        <motion.div 
-          variants={itemVariants}
-          className="bg-gray-800/80 backdrop-blur-xl shadow-2xl rounded-2xl p-8 border border-gray-700"
+      {/* Container principal com Flexbox e z-index para ficar na frente */}
+      <div className="w-full max-w-5xl flex rounded-2xl overflow-hidden shadow-2xl relative z-10">
+        {/* Contêiner do Vídeo */}
+        <motion.div
+          initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="hidden md:flex flex-1 relative overflow-hidden bg-black"
+        >
+          <video
+            className="absolute inset-0 w-full h-full object-cover object-[45%_center]"
+            /* object-[45%_center]: desloca ligeiramente o foco para a esquerda (default seria 50%) */
+            src="/videos/bi-animation.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+        </motion.div>
+        
+        {/* Contêiner do Formulário de Login */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex-1 p-8 bg-gray-800/80 backdrop-blur-xl border border-gray-700 md:rounded-l-none"
         >
           {/* Logo e Título */}
           <motion.div 
@@ -339,7 +354,7 @@ const Login = () => {
             © 2025 iGreen Energy. Todos os direitos reservados.
           </motion.p>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };
