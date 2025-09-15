@@ -12,10 +12,13 @@ const BarChartComponent = ({ data, title }) => {
           <YAxis stroke="#9CA3AF" />
           <Tooltip 
             contentStyle={{ 
-              backgroundColor: '#1F2937', 
-              border: 'none',
-              borderRadius: '8px'
+              backgroundColor: 'rgb(31, 41, 55)', 
+              border: '1px solid rgb(75, 85, 99)',
+              borderRadius: '8px',
+              color: '#fff'
             }}
+            labelStyle={{ color: '#fff' }}
+            itemStyle={{ color: '#fff' }}
           />
           <Legend />
           <Bar dataKey="clientes" fill="#10B981" name="Clientes" />

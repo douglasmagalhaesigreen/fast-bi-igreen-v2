@@ -23,7 +23,16 @@ const PieChartComponent = ({ data, title }) => {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgb(31, 41, 55)', 
+              border: '1px solid rgb(75, 85, 99)',
+              borderRadius: '8px',
+              color: '#fff'
+            }}
+            labelStyle={{ color: '#fff' }}
+            itemStyle={{ color: '#fff' }}
+          />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
