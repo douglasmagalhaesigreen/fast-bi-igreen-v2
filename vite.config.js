@@ -10,7 +10,7 @@ export default defineConfig({
     strictPort: true, // Se a porta estiver em uso, falha em vez de tentar outra
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5555',
         changeOrigin: true,
         secure: false,
       }
