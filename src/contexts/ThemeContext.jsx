@@ -5,9 +5,12 @@ import { ThemeContext } from './theme-context';
 export const ThemeProvider = ({ children }) => {
   const transitionTimerRef = useRef(null);
   const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+    
     const savedTheme = localStorage.getItem('theme');
-    console.log('Tema inicial:', savedTheme || 'light');
-    if (savedTheme) return savedTheme;
+    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+      return savedTheme;
+    }
     
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
@@ -16,7 +19,8 @@ export const ThemeProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    console.log('Mudando tema para:', theme);
+    if (typeof window === 'undefined') return;
+    
     const root = document.documentElement;
     
     // Remover ambas as classes primeiro
@@ -30,23 +34,23 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    console.log('Toggle theme chamado, tema atual:', theme);
+    if (typeof window === 'undefined') return;
+    
     const root = document.documentElement;
+    
     // Habilita transição global temporária
     if (transitionTimerRef.current) {
       clearTimeout(transitionTimerRef.current);
     }
+    
     root.classList.add('theme-transition');
+    
     transitionTimerRef.current = setTimeout(() => {
       root.classList.remove('theme-transition');
       transitionTimerRef.current = null;
     }, 400);
 
-    setTheme(prevTheme => {
-      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
-      console.log('Novo tema será:', newTheme);
-      return newTheme;
-    });
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   useEffect(() => {

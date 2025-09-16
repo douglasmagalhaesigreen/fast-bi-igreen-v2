@@ -10,11 +10,20 @@
   /* Transição suave entre temas (habilitada quando .theme-transition está no root) */
   @media (prefers-reduced-motion: no-preference) {
     .theme-transition,
-    .theme-transition * {
-      transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
-      transition-duration: 300ms;
-      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    .theme-transition *,
+    .theme-transition *::before,
+    .theme-transition *::after {
+      transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity, text-decoration-color !important;
+      transition-duration: 400ms !important;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
+  }
+  
+  /* Elementos que sempre devem ter transição suave */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   /* Scrollbar personalizada */
