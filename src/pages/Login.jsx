@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { 
   Eye, EyeOff, Loader2, Zap, Mail, Lock, 
   AlertCircle, CheckCircle, User
 } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import ThemeToggle from '../components/common/ThemeToggle';
 
 const Login = () => {
   const navigate = useNavigate();
+  useTheme();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -124,11 +127,11 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-gray-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 transition-colors duration-300 relative overflow-hidden">
       {/* Background animado - REINTEGRADO */}
       <div className="absolute inset-0 opacity-20 z-0">
         {[...Array(5)].map((_, i) => (
-          <motion.div
+          <Motion.div
             key={i}
             className="absolute rounded-full bg-green-500"
             style={{
@@ -151,10 +154,17 @@ const Login = () => {
         ))}
       </div>
 
+      {/* Toggle de tema flutuante */}
+      <div className="fixed top-4 right-4 md:top-6 md:right-6 z-50">
+        <ThemeToggle
+          knobStyle={{ top: '50%', marginTop: '-14px' }}
+        />
+      </div>
+
       {/* Container principal com Flexbox e z-index para ficar na frente */}
       <div className="w-full max-w-5xl flex rounded-2xl overflow-hidden shadow-2xl relative z-10">
         {/* Contêiner do Vídeo */}
-        <motion.div
+        <Motion.div
           initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -169,21 +179,21 @@ const Login = () => {
             muted
             playsInline
           />
-        </motion.div>
+        </Motion.div>
         
         {/* Contêiner do Formulário de Login */}
-        <motion.div
+        <Motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="flex-1 p-8 bg-gray-800/80 backdrop-blur-xl border border-gray-700 md:rounded-l-none"
+          className="flex-1 p-8 bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 md:rounded-l-none"
         >
           {/* Logo e Título */}
-          <motion.div 
+          <Motion.div 
             variants={itemVariants}
             className="text-center mb-8"
           >
-            <motion.div
+            <Motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ 
@@ -194,43 +204,43 @@ const Login = () => {
               className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full mb-4 shadow-lg"
             >
               <Zap className="w-10 h-10 text-white" />
-            </motion.div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            </Motion.div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Fast BI iGreen
             </h1>
-            <p className="text-gray-400">
+            <p className="text-gray-600 dark:text-gray-400">
               Sistema de Business Intelligence
             </p>
-          </motion.div>
+          </Motion.div>
 
           {/* Mensagens de erro/sucesso */}
           {error && (
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-center text-red-200"
+              className="mb-4 p-3 rounded-lg flex items-center border bg-red-50 border-red-200 text-red-700 dark:bg-red-900/50 dark:border-red-700 dark:text-red-200"
             >
               <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
               <span className="text-sm">{error}</span>
-            </motion.div>
+            </Motion.div>
           )}
 
           {success && (
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-center text-green-200"
+              className="mb-4 p-3 rounded-lg flex items-center border bg-green-50 border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-700 dark:text-green-200"
             >
               <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
               <span className="text-sm">{success}</span>
-            </motion.div>
+            </Motion.div>
           )}
 
           {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Campo Email */}
-            <motion.div variants={itemVariants}>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+            <Motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email
               </label>
               <div className="relative">
@@ -242,16 +252,16 @@ const Login = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   placeholder="seu@email.com"
                   disabled={isLoading}
                 />
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Campo Senha */}
-            <motion.div variants={itemVariants}>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+            <Motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -263,7 +273,7 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
@@ -280,10 +290,10 @@ const Login = () => {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Lembrar-me e Esqueci a senha */}
-            <motion.div 
+            <Motion.div 
               variants={itemVariants}
               className="flex items-center justify-between"
             >
@@ -292,27 +302,27 @@ const Login = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 focus:ring-2"
+                  className="w-4 h-4 text-green-600 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-green-500 focus:ring-2"
                 />
-                <span className="ml-2 text-sm text-gray-300">
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                   Lembrar-me
                 </span>
               </label>
               <button
                 type="button"
                 onClick={() => console.log('Recuperar senha')}
-                className="text-sm text-green-400 hover:text-green-300 transition-colors"
+                className="text-sm text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300 transition-colors"
               >
                 Esqueceu a senha?
               </button>
-            </motion.div>
+            </Motion.div>
 
             {/* Botão de Login */}
-            <motion.div variants={itemVariants}>
+            <Motion.div variants={itemVariants}>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
               >
                 {isLoading ? (
                   <>
@@ -323,37 +333,37 @@ const Login = () => {
                   'Entrar'
                 )}
               </button>
-            </motion.div>
+            </Motion.div>
           </form>
 
           {/* Credenciais de Demo */}
-          <motion.div 
+          <Motion.div 
             variants={itemVariants}
-            className="mt-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600"
+            className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-600"
           >
-            <p className="text-xs text-gray-400 mb-2">
-              <strong className="text-gray-300">Credenciais de demonstração:</strong>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+              <strong className="text-gray-800 dark:text-gray-300">Credenciais de demonstração:</strong>
             </p>
             <div className="space-y-1">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 <User className="w-3 h-3 inline mr-1" />
                 Email: admin@igreen.com
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 <Lock className="w-3 h-3 inline mr-1" />
                 Senha: 123456
               </p>
             </div>
-          </motion.div>
+          </Motion.div>
 
           {/* Footer */}
-          <motion.p 
+          <Motion.p 
             variants={itemVariants}
-            className="text-center text-xs text-gray-500 mt-6"
+            className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6"
           >
             © 2025 iGreen Energy. Todos os direitos reservados.
-          </motion.p>
-        </motion.div>
+          </Motion.p>
+        </Motion.div>
       </div>
     </div>
   );

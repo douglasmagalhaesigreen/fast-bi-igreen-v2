@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { useTheme } from './hooks/useTheme';
+import ThemeToggle from './components/common/ThemeToggle';
 import DashboardTV from './pages/DashboardTV';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -132,7 +132,7 @@ const SettingsPage = () => (
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
+  // Theme handled by ThemeToggle component
   const [user, setUser] = useState(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -336,16 +336,7 @@ const MainLayout = () => {
               </button>
 
               {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
-              >
-                {theme === 'light' ? (
-                  <Moon className='w-5 h-5 text-gray-600 dark:text-gray-300' />
-                ) : (
-                  <Sun className='w-5 h-5 text-gray-600 dark:text-gray-300' />
-                )}
-              </button>
+              <ThemeToggle size='sm' />
 
               {/* User Menu */}
               <div className='relative'>

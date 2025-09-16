@@ -6,6 +6,16 @@
   body {
     @apply transition-colors duration-300;
   }
+
+  /* Transição suave entre temas (habilitada quando .theme-transition está no root) */
+  @media (prefers-reduced-motion: no-preference) {
+    .theme-transition,
+    .theme-transition * {
+      transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
+      transition-duration: 300ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
   
   /* Scrollbar personalizada */
   ::-webkit-scrollbar {
