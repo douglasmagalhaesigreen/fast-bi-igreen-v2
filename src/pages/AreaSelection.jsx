@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { 
   Zap, Network, Sun, Phone, Square, Radio,
   ArrowRight, Lock, LogOut
@@ -15,6 +15,11 @@ const AreaSelection = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.removeItem('token');
+    try {
+      localStorage.setItem('logout', String(Date.now()));
+    } catch {
+      // noop
+    }
     navigate('/login');
   };
 
@@ -28,7 +33,7 @@ const AreaSelection = () => {
       hoverColor: 'hover:from-green-500 hover:to-emerald-700',
       shadowColor: 'shadow-green-500/25',
       available: true,
-      path: '/dashboard'
+      path: '/'
     },
     {
       id: 'expansao',
@@ -148,7 +153,7 @@ const AreaSelection = () => {
 
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center px-6 py-12">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -160,9 +165,9 @@ const AreaSelection = () => {
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Escolha o módulo que deseja acessar
           </p>
-        </motion.div>
+        </Motion.div>
 
-        <motion.div
+        <Motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -173,7 +178,7 @@ const AreaSelection = () => {
             const isSelected = selectedArea === area.id;
             
             return (
-              <motion.div
+              <Motion.div
                 key={area.id}
                 variants={itemVariants}
                 whileHover={area.available ? { scale: 1.03 } : {}}
@@ -234,13 +239,13 @@ const AreaSelection = () => {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
             );
           })}
-        </motion.div>
+        </Motion.div>
 
         {/* Info Footer */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
@@ -249,7 +254,7 @@ const AreaSelection = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Em breve mais áreas estarão disponíveis. Fique atento às atualizações!
           </p>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );

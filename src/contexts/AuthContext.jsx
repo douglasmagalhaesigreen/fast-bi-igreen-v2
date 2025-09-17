@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authService } from '../services/auth.service';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -35,22 +36,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    try {
-      const response = await authService.login(email, password);
-      const { access_token, refresh_token, user } = response.data;
-      
-      // Salvar tokens
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      
-      // Atualizar estado
-      setUser(user);
-      setIsAuthenticated(true);
-      
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await authService.login(email, password);
+    const { access_token, refresh_token, user } = response.data;
+
+    // Salvar tokens
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('refresh_token', refresh_token);
+
+    // Atualizar estado
+    setUser(user);
+    setIsAuthenticated(true);
+
+    return response;
   };
 
   const logout = async () => {
@@ -62,6 +59,11 @@ export const AuthProvider = ({ children }) => {
       // Limpar tokens e estado
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      try {
+        localStorage.setItem('logout', String(Date.now()));
+      } catch {
+        // noop
+      }
       setUser(null);
       setIsAuthenticated(false);
     }

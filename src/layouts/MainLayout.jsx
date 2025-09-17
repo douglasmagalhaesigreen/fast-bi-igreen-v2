@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, LayoutDashboard, FileText, Map, Settings,
   Menu, X, LogOut, User, Bell, Search, 
@@ -20,7 +20,7 @@ const MainLayout = () => {
 
   const menuItems = [
     {
-      path: '/dashboard',
+      path: '/',
       label: 'Dashboard',
       icon: LayoutDashboard
     },
@@ -77,7 +77,7 @@ const MainLayout = () => {
       {/* Sidebar */}
       <AnimatePresence mode="wait">
         {sidebarOpen && (
-          <motion.aside
+          <Motion.aside
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}
@@ -108,7 +108,7 @@ const MainLayout = () => {
                 const isActive = location.pathname === item.path;
                 
                 return (
-                  <motion.button
+                  <Motion.button
                     key={item.path}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -124,12 +124,12 @@ const MainLayout = () => {
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
-                  </motion.button>
+                  </Motion.button>
                 );
               })}
 
               {/* Botão Dashboard TV */}
-              <motion.button
+              <Motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => window.open('/dashboard-tv', '_blank')}
@@ -137,7 +137,7 @@ const MainLayout = () => {
               >
                 <Tv className="w-5 h-5" />
                 <span className="font-medium">Dashboard TV</span>
-              </motion.button>
+              </Motion.button>
             </nav>
 
             {/* Informações do Usuário */}
@@ -156,7 +156,7 @@ const MainLayout = () => {
                 </div>
               </div>
             </div>
-          </motion.aside>
+          </Motion.aside>
         )}
       </AnimatePresence>
 
@@ -217,7 +217,7 @@ const MainLayout = () => {
                 {/* Dropdown de Notificações */}
                 <AnimatePresence>
                   {notificationsOpen && (
-                    <motion.div
+                    <Motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -255,7 +255,7 @@ const MainLayout = () => {
                           </div>
                         ))}
                       </div>
-                    </motion.div>
+                    </Motion.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -275,7 +275,7 @@ const MainLayout = () => {
                 {/* Dropdown do Perfil */}
                 <AnimatePresence>
                   {profileMenuOpen && (
-                    <motion.div
+                    <Motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -308,7 +308,7 @@ const MainLayout = () => {
                           <span className="text-sm text-red-600">Sair</span>
                         </button>
                       </div>
-                    </motion.div>
+                    </Motion.div>
                   )}
                 </AnimatePresence>
               </div>

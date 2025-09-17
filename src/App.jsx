@@ -159,9 +159,18 @@ const MainLayout = () => {
   };
 
   const handleLogout = () => {
+    // Remover todos os possíveis tokens/chaves e avisar outras abas
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.removeItem('token');
+    // Broadcast de logout entre abas
+    try {
+      localStorage.setItem('logout', String(Date.now()));
+    } catch {
+      // noop
+    }
     navigate('/login');
   };
 
@@ -375,6 +384,14 @@ const MainLayout = () => {
                         </p>
                       </div>
                       <Link
+                        to='/area-selection'
+                        className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <LayoutDashboard className='w-4 h-4 inline mr-2' />
+                        Seleção de Área
+                      </Link>
+                      <Link
                         to='/settings'
                         className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         onClick={() => setShowUserMenu(false)}
@@ -413,6 +430,25 @@ const MainLayout = () => {
 
 // App principal
 function App() {
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'logout') {
+        // Limpa qualquer resquício local e força tela de login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        // Redireciono via hash para evitar dependência de hooks aqui
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   return (
     <ThemeProvider>
       <Router>

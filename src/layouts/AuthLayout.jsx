@@ -5,9 +5,9 @@ import { useAuth } from '../hooks/useAuth';
 const AuthLayout = () => {
   const { isAuthenticated } = useAuth();
 
-  // Se já estiver autenticado, redirecionar para dashboard
+  // Se já estiver autenticado, redirecionar para a área principal
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
