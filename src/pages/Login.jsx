@@ -25,7 +25,7 @@ const Login = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      navigate('/');
+      navigate('/area-selection');
     }
   }, [navigate]);
 
@@ -91,7 +91,7 @@ const Login = () => {
         setSuccess('Login realizado com sucesso!');
         
         setTimeout(() => {
-          navigate('/');
+          navigate('/area-selection');
         }, 1000);
       } else {
         setError('Email ou senha incorretos');
@@ -156,9 +156,7 @@ const Login = () => {
 
       {/* Toggle de tema flutuante */}
       <div className="fixed top-4 right-4 md:top-6 md:right-6 z-50">
-        <ThemeToggle
-          knobStyle={{ top: '50%', marginTop: '-14px' }}
-        />
+          <ThemeToggle size="sm" />
       </div>
 
       {/* Container principal com Flexbox e z-index para ficar na frente */}

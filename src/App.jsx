@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LineChartComponent from './components/charts/LineChartComponent';
 import BarChartComponent from './components/charts/BarChartComponent';
 import PieChartComponent from './components/charts/PieChartComponent';
+import AreaSelection from './pages/AreaSelection';
 
 // Componentes das páginas
 const Dashboard = () => {
@@ -418,6 +419,16 @@ function App() {
         <Routes>
           {/* Rota de Login */}
           <Route path='/login' element={<Login />} />
+          
+          {/* Rota de Seleção de Área */}
+          <Route 
+            path='/area-selection' 
+            element={
+              <ProtectedRoute>
+                <AreaSelection />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Rota do Dashboard TV (protegida) */}
           <Route 
