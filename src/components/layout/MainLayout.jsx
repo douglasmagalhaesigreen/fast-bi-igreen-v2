@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Map, Settings, Tv, LogOut, User, Bell, Search, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, FileText, Map, Settings, Tv, LogOut, User, Bell, Search, Zap, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import ThemeToggle from '../common/ThemeToggle';
@@ -17,6 +17,15 @@ const MainLayout = () => {
   const { user, logout } = useAuth();
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Fallbacks para exibição de dados do usuário
+  const displayName = user?.name || user?.fullName || user?.full_name || user?.username || user?.email || 'Usuário';
+  const displayRole = user?.role || user?.perfil || user?.profile || '';
+  const displayEmail = user?.email || user?.username || '';
+  const emailText = displayEmail || 'email@exemplo.com';
+  const atIndex = emailText.indexOf('@');
+  const emailLocal = atIndex > -1 ? emailText.slice(0, atIndex) : emailText;
+  const emailDomain = atIndex > -1 ? emailText.slice(atIndex + 1) : '';
 
   useEffect(() => {
     const savedSidebarState = localStorage.getItem('sidebarExpanded');
@@ -142,9 +151,9 @@ const MainLayout = () => {
                   <div className='w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center'>
                     <User className='w-4 h-4 text-white' />
                   </div>
-                  <div className='text-left'>
-                    <p className='text-sm font-medium text-gray-700 dark:text-gray-200'>{user?.name || 'Usuário'}</p>
-                    <p className='text-xs text-gray-500 dark:text-gray-400'>{user?.role || 'Admin'}</p>
+                  <div className='text-left max-w-[10rem]'>
+                    <p className='text-sm font-medium text-gray-700 dark:text-gray-200 truncate' title={displayName}>{displayName}</p>
+                    <p className='text-xs text-gray-500 dark:text-gray-400 truncate' title={displayRole || 'Perfil'}>{displayRole || 'Admin'}</p>
                   </div>
                 </button>
                 <AnimatePresence>
@@ -153,9 +162,20 @@ const MainLayout = () => {
                       className='absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 py-2 z-50'
                     >
                       <div className='px-4 py-2 border-b dark:border-gray-700'>
-                        <p className='text-sm font-medium text-gray-800 dark:text-gray-200'>{user?.name || 'Usuário'}</p>
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>{user?.email || 'email@exemplo.com'}</p>
+                        <p className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate' title={displayName}>{displayName}</p>
+                        <p
+                          className='text-xs text-gray-500 dark:text-gray-400 whitespace-normal break-words leading-snug'
+                          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                          title={emailText}
+                        >
+                          <span>{emailLocal}</span>
+                          {atIndex > -1 && <wbr />}
+                          {atIndex > -1 && <span>@{emailDomain}</span>}
+                        </p>
                       </div>
+                      <Link to='/area-selection' className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' onClick={() => setShowUserMenu(false)}>
+                        <Layers className='w-4 h-4 inline mr-2' /> Seleção de Área
+                      </Link>
                       <Link to='/settings' className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' onClick={() => setShowUserMenu(false)}>
                         <Settings className='w-4 h-4 inline mr-2' /> Configurações
                       </Link>

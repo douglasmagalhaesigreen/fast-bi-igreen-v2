@@ -11,6 +11,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout'; 
 import Login from './features/auth/Login';
 import DashboardTV from './pages/DashboardTV'; // Assumindo que este ainda não foi movido
+import AreaSelection from './pages/AreaSelection';
 import ProtectedRoute from './features/auth/components/ProtectedRoute'; // Caminho corrigido
 
 const queryClient = new QueryClient({
@@ -40,6 +41,14 @@ function App() {
               <Route path="/login" element={<Login />} />
 
               {/* Rotas Protegidas */}
+              <Route
+                path="/area-selection"
+                element={
+                  <ProtectedRoute>
+                    <AreaSelection />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/*"
                 element={

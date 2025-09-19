@@ -6,21 +6,25 @@ import {
   ArrowRight, Lock, LogOut
 } from 'lucide-react';
 import ThemeToggle from '../components/common/ThemeToggle';
+import { useAuth } from '../hooks/useAuth';
 
 const AreaSelection = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [selectedArea, setSelectedArea] = useState(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('token');
+  const handleLogout = async () => {
     try {
-      localStorage.setItem('logout', String(Date.now()));
-    } catch {
-      // noop
+      await logout();
+      try {
+        // broadcast simples entre abas (opcional)
+        localStorage.setItem('logout', String(Date.now()));
+      } catch {
+        // noop
+      }
+    } finally {
+      navigate('/login', { replace: true });
     }
-    navigate('/login');
   };
 
   const areas = [
