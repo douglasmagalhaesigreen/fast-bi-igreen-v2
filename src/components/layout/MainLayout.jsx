@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, Map, Settings, Tv, LogOut, User, Bell, Search, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
-import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../hooks/useTheme';
-import ThemeToggle from '../components/common/ThemeToggle';
+import { useAuth } from '../../hooks/useAuth';
+import ThemeToggle from '../common/ThemeToggle';
 
-// Importe suas páginas aqui
-import Dashboard from '../pages/Dashboard'; 
-// Crie arquivos para as páginas abaixo em src/pages/ se não existirem
-const Reports = () => <div className="p-8 text-white">Página de Relatórios</div>;
-const MapPage = () => <div className="p-8 text-white">Página de Mapa</div>;
-const SettingsPage = () => <div className="p-8 text-white">Página de Configurações</div>;
+// Páginas (features)
+import Dashboard from '../../features/dashboard/Dashboard';
+import Reports from '../../features/reports/Reports';
+import MapPage from '../../features/map/Map';
+import SettingsPage from '../../features/settings/Settings';
 
 const MainLayout = () => {
   const navigate = useNavigate();

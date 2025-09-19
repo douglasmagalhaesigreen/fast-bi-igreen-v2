@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { dashboardService } from '../services/api';
-import LineChartComponent from '../components/charts/LineChartComponent';
-import BarChartComponent from '../components/charts/BarChartComponent';
-import PieChartComponent from '../components/charts/PieChartComponent';
+import { dashboardService } from '../../services/api';
+import LineChartComponent from '../../components/charts/LineChartComponent';
+import BarChartComponent from '../../components/charts/BarChartComponent';
+import PieChartComponent from '../../components/charts/PieChartComponent';
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {

@@ -7,21 +7,21 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 
-// Layouts & Pages
-import MainLayout from './layouts/MainLayout';
-import Login from './pages/Login';
-import DashboardTV from './pages/DashboardTV';
-import ProtectedRoute from './components/auth/ProtectedRoute'; // Usando o ProtectedRoute mais robusto
+// Layouts e Páginas com os caminhos JÁ CORRIGIDOS
+import MainLayout from './components/layout/MainLayout'; 
+import Login from './features/auth/Login';
+import DashboardTV from './pages/DashboardTV'; // Assumindo que este ainda não foi movido
+import ProtectedRoute from './features/auth/components/ProtectedRoute'; // Caminho corrigido
 
-// Crie o cliente React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
+      staleTime: 1000 * 60 * 5,
+      cacheTime: 1000 * 60 * 10,
       refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
+      retry: 1
+    }
+  }
 });
 
 function App() {
@@ -30,22 +30,16 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <Router>
-            <Toaster position="top-right" />
+            <Toaster
+              position="top-right"
+              reverseOrder={false}
+            />
+            
             <Routes>
-              {/* Rota de Login (Pública) */}
+              {/* Rota Pública */}
               <Route path="/login" element={<Login />} />
 
-              {/* Rota do Dashboard TV (Protegida) */}
-              <Route
-                path="/dashboard-tv"
-                element={
-                  <ProtectedRoute>
-                    <DashboardTV />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Rotas principais protegidas com o MainLayout */}
+              {/* Rotas Protegidas */}
               <Route
                 path="/*"
                 element={
@@ -54,8 +48,16 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              
-              {/* Redirecionamento padrão */}
+              <Route
+                path="/dashboard-tv"
+                element={
+                  <ProtectedRoute>
+                    <DashboardTV />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Redirecionamentos */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>

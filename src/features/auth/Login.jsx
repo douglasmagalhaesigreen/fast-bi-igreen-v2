@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion as Motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Zap, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import ThemeToggle from '../components/common/ThemeToggle';
-import { useAuth } from '../hooks/useAuth'; // Importar o hook de autenticação
+import { useTheme } from '../../hooks/useTheme';
+import ThemeToggle from '../../components/common/ThemeToggle';
+import { useAuth } from '../../hooks/useAuth'; // Importar o hook de autenticação
 
 const Login = () => {
   const navigate = useNavigate();
