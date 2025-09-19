@@ -1,313 +1,169 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { motion as Motion, AnimatePresence } from 'framer-motion';
-import {
-  Zap, LayoutDashboard, FileText, Map, Settings,
-  Menu, X, LogOut, User, Bell, Search, 
-  Sun, Moon, Monitor, ChevronDown, Tv
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, FileText, Map, Settings, Tv, LogOut, User, Bell, Search, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import ThemeToggle from '../components/common/ThemeToggle';
+
+// Importe suas páginas aqui
+import Dashboard from '../pages/Dashboard'; 
+// Crie arquivos para as páginas abaixo em src/pages/ se não existirem
+const Reports = () => <div className="p-8 text-white">Página de Relatórios</div>;
+const MapPage = () => <div className="p-8 text-white">Página de Mapa</div>;
+const SettingsPage = () => <div className="p-8 text-white">Página de Configurações</div>;
 
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const menuItems = [
-    {
-      path: '/',
-      label: 'Dashboard',
-      icon: LayoutDashboard
-    },
-    {
-      path: '/reports',
-      label: 'Relatórios',
-      icon: FileText
-    },
-    {
-      path: '/map',
-      label: 'Mapa',
-      icon: Map
-    },
-    {
-      path: '/settings',
-      label: 'Configurações',
-      icon: Settings
+  useEffect(() => {
+    const savedSidebarState = localStorage.getItem('sidebarExpanded');
+    if (savedSidebarState !== null) {
+      setSidebarExpanded(JSON.parse(savedSidebarState));
     }
-  ];
+  }, []);
+
+  const toggleSidebar = () => {
+    const newState = !sidebarExpanded;
+    setSidebarExpanded(newState);
+    localStorage.setItem('sidebarExpanded', JSON.stringify(newState));
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'Novo relatório disponível',
-      message: 'O relatório mensal de consumo está pronto',
-      time: '5 min atrás',
-      read: false
-    },
-    {
-      id: 2,
-      title: 'Meta atingida',
-      message: 'A meta de eficiência foi alcançada este mês',
-      time: '2 horas atrás',
-      read: false
-    },
-    {
-      id: 3,
-      title: 'Atualização do sistema',
-      message: 'Nova versão disponível para download',
-      time: '1 dia atrás',
-      read: true
-    }
+  const isActive = (path) => location.pathname === path;
+
+  const menuItems = [
+    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/reports', icon: FileText, label: 'Relatórios' },
+    { path: '/map', icon: Map, label: 'Mapa' },
   ];
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
   return (
-    <div className="min-h-screen bg-light-bg-secondary dark:bg-dark-bg-primary transition-colors duration-300">
+    <div className='min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 flex'>
       {/* Sidebar */}
-      <AnimatePresence mode="wait">
-        {sidebarOpen && (
-          <Motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-dark-bg-secondary shadow-xl z-40"
-          >
-            {/* Logo */}
-            <div className="p-6 border-b border-light-border dark:border-dark-border">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary">
-                    Fast BI
-                  </h2>
-                  <p className="text-xs text-light-text-tertiary dark:text-dark-text-tertiary">
-                    iGreen Energy
-                  </p>
-                </div>
+      <Motion.aside
+        initial={false}
+        animate={{ width: sidebarExpanded ? 256 : 80 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className='bg-white dark:bg-gray-800 shadow-xl border-r dark:border-gray-700 flex flex-col relative z-40'
+      >
+        <div className='p-4 border-b dark:border-gray-700'>
+          <div className='flex items-center justify-between'>
+            <Motion.div className='flex items-center space-x-3' animate={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center' }}>
+              <div className='w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0'>
+                <Zap className='w-6 h-6 text-white' />
               </div>
-            </div>
-
-            {/* Menu de Navegação */}
-            <nav className="p-4 space-y-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                
-                return (
-                  <Motion.button
-                    key={item.path}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate(item.path)}
-                    className={`
-                      w-full flex items-center space-x-3 px-4 py-3 rounded-lg
-                      transition-all duration-200
-                      ${isActive
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
-                        : 'text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary'
-                      }
-                    `}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Motion.button>
-                );
-              })}
-
-              {/* Botão Dashboard TV */}
-              <Motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => window.open('/dashboard-tv', '_blank')}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-all duration-200"
-              >
-                <Tv className="w-5 h-5" />
-                <span className="font-medium">Dashboard TV</span>
-              </Motion.button>
-            </nav>
-
-            {/* Informações do Usuário */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-light-border dark:border-dark-border">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-light-bg-tertiary dark:bg-dark-bg-tertiary">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-light-text-primary dark:text-dark-text-primary">
-                    {user?.name || 'Usuário'}
-                  </p>
-                  <p className="text-xs text-light-text-tertiary dark:text-dark-text-tertiary">
-                    {user?.email || 'usuario@igreen.com'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Conteúdo Principal */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-        {/* Header */}
-        <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-light-border dark:border-dark-border">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              {/* Toggle Sidebar */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors"
-              >
-                {sidebarOpen ? (
-                  <X className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary" />
-                ) : (
-                  <Menu className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary" />
+              <AnimatePresence>
+                {sidebarExpanded && (
+                  <Motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                    <h2 className='text-lg font-bold text-gray-800 dark:text-white whitespace-nowrap'>Fast BI iGreen</h2>
+                  </Motion.div>
                 )}
-              </button>
+              </AnimatePresence>
+            </Motion.div>
+          </div>
+        </div>
 
-              {/* Barra de Pesquisa */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-light-text-tertiary dark:text-dark-text-tertiary" />
-                <input
-                  type="text"
-                  placeholder="Pesquisar..."
-                  className="pl-10 pr-4 py-2 w-80 rounded-lg border border-light-border dark:border-dark-border bg-light-bg-primary dark:bg-dark-bg-primary text-light-text-primary dark:text-dark-text-primary placeholder-light-text-tertiary dark:placeholder-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-green-500"
+        <nav className='flex-1 p-4 space-y-2 flex flex-col'>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <Link key={item.path} to={item.path}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${active ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'} ${!sidebarExpanded ? 'justify-center' : ''}`}
+                title={!sidebarExpanded ? item.label : ''}
+              >
+                <Icon className='w-5 h-5 flex-shrink-0' />
+                <AnimatePresence>
+                  {sidebarExpanded && (
+                    <Motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className='font-medium whitespace-nowrap'>
+                      {item.label}
+                    </Motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
+            );
+          })}
+          <Link to='/dashboard-tv' target='_blank'
+            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${!sidebarExpanded ? 'justify-center' : ''}`}
+            title={!sidebarExpanded ? 'Dashboard TV' : ''}
+          >
+            <Tv className='w-5 h-5 flex-shrink-0' />
+            <AnimatePresence>
+              {sidebarExpanded && (
+                <Motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className='font-medium whitespace-nowrap'>
+                  Dashboard TV
+                </Motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+          <div className='mt-auto' />
+        </nav>
+
+        <div className='p-4 border-t dark:border-gray-700'>
+          <div className='flex justify-center'>
+            <button onClick={toggleSidebar} aria-label={sidebarExpanded ? 'Recolher menu' : 'Expandir menu'} title={sidebarExpanded ? 'Recolher menu' : 'Expandir menu'}
+              className='group relative p-2 rounded-full transition-colors duration-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none'
+            >
+              <Motion.div key={sidebarExpanded ? 'expanded' : 'collapsed'} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className='flex items-center justify-center text-gray-600 dark:text-gray-300'>
+                {sidebarExpanded ? <ChevronLeft className='w-5 h-5' /> : <ChevronRight className='w-5 h-5' />}
+              </Motion.div>
+            </button>
+          </div>
+        </div>
+      </Motion.aside>
+
+      <div className='flex-1 flex flex-col'>
+        <header className='bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 px-6 py-4'>
+          <div className='flex items-center justify-between'>
+            <div className='flex-1 max-w-xl'>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
+                <input type='text' placeholder='Pesquisar...'
+                  className='w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
                 />
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Toggle Tema */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors"
-              >
-                {theme === 'light' ? (
-                  <Moon className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary" />
-                ) : (
-                  <Sun className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary" />
-                )}
+            <div className='flex items-center space-x-4 ml-6'>
+              <button className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative'>
+                <Bell className='w-5 h-5 text-gray-600 dark:text-gray-300' />
+                <span className='absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full'></span>
               </button>
-
-              {/* Notificações */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className="p-2 rounded-lg hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors relative"
-                >
-                  <Bell className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                  )}
-                </button>
-
-                {/* Dropdown de Notificações */}
-                <AnimatePresence>
-                  {notificationsOpen && (
-                    <Motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl border border-light-border dark:border-dark-border overflow-hidden z-50"
-                    >
-                      <div className="p-4 border-b border-light-border dark:border-dark-border">
-                        <h3 className="font-semibold text-light-text-primary dark:text-dark-text-primary">
-                          Notificações
-                        </h3>
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        {notifications.map((notif) => (
-                          <div
-                            key={notif.id}
-                            className={`p-4 border-b border-light-border dark:border-dark-border hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary cursor-pointer ${
-                              !notif.read ? 'bg-green-50 dark:bg-green-900/10' : ''
-                            }`}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-light-text-primary dark:text-dark-text-primary">
-                                  {notif.title}
-                                </p>
-                                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-1">
-                                  {notif.message}
-                                </p>
-                                <p className="text-xs text-light-text-tertiary dark:text-dark-text-tertiary mt-2">
-                                  {notif.time}
-                                </p>
-                              </div>
-                              {!notif.read && (
-                                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </Motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Menu do Perfil */}
-              <div className="relative">
-                <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+              <ThemeToggle size='sm' />
+              <div className='relative'>
+                <button onClick={() => setShowUserMenu(!showUserMenu)} className='flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'>
+                  <div className='w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center'>
+                    <User className='w-4 h-4 text-white' />
                   </div>
-                  <ChevronDown className="w-4 h-4 text-light-text-secondary dark:text-dark-text-secondary" />
+                  <div className='text-left'>
+                    <p className='text-sm font-medium text-gray-700 dark:text-gray-200'>{user?.name || 'Usuário'}</p>
+                    <p className='text-xs text-gray-500 dark:text-gray-400'>{user?.role || 'Admin'}</p>
+                  </div>
                 </button>
-
-                {/* Dropdown do Perfil */}
                 <AnimatePresence>
-                  {profileMenuOpen && (
-                    <Motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-bg-secondary rounded-lg shadow-xl border border-light-border dark:border-dark-border overflow-hidden z-50"
+                  {showUserMenu && (
+                    <Motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                      className='absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 py-2 z-50'
                     >
-                      <button
-                        onClick={() => navigate('/settings')}
-                        className="w-full px-4 py-3 text-left hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors flex items-center space-x-3"
-                      >
-                        <User className="w-4 h-4 text-light-text-secondary dark:text-dark-text-secondary" />
-                        <span className="text-sm text-light-text-primary dark:text-dark-text-primary">
-                          Meu Perfil
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => navigate('/settings')}
-                        className="w-full px-4 py-3 text-left hover:bg-light-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-colors flex items-center space-x-3"
-                      >
-                        <Settings className="w-4 h-4 text-light-text-secondary dark:text-dark-text-secondary" />
-                        <span className="text-sm text-light-text-primary dark:text-dark-text-primary">
-                          Configurações
-                        </span>
-                      </button>
-                      <div className="border-t border-light-border dark:border-dark-border">
-                        <button
-                          onClick={handleLogout}
-                          className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-3"
-                        >
-                          <LogOut className="w-4 h-4 text-red-600" />
-                          <span className="text-sm text-red-600">Sair</span>
-                        </button>
+                      <div className='px-4 py-2 border-b dark:border-gray-700'>
+                        <p className='text-sm font-medium text-gray-800 dark:text-gray-200'>{user?.name || 'Usuário'}</p>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>{user?.email || 'email@exemplo.com'}</p>
                       </div>
+                      <Link to='/settings' className='block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' onClick={() => setShowUserMenu(false)}>
+                        <Settings className='w-4 h-4 inline mr-2' /> Configurações
+                      </Link>
+                      <button onClick={handleLogout} className='w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center'>
+                        <LogOut className='w-4 h-4 mr-2' /> Sair
+                      </button>
                     </Motion.div>
                   )}
                 </AnimatePresence>
@@ -316,9 +172,14 @@ const MainLayout = () => {
           </div>
         </header>
 
-        {/* Conteúdo da Página */}
-        <main className="p-6">
-          <Outlet />
+        <main className='flex-1 overflow-auto'>
+            {/* O Outlet renderizará as rotas aninhadas (Dashboard, Reports, etc.) */}
+            <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/map" element={<MapPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
         </main>
       </div>
     </div>

@@ -1,50 +1,70 @@
-#!/usr/bin/env python
-"""
-Arquivo principal para executar a aplicação Flask - MODO SOMENTE LEITURA
-"""
+#!/usr/bin/env python3
 import os
 import sys
+from app import create_app, db
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 # Carregar variáveis de ambiente
 load_dotenv()
 
-# Adicionar o diretório ao path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Criar aplicação
+app = create_app(os.getenv('FLASK_ENV', 'development'))
 
-from app import create_app
-
-# Criar a aplicação
-config_name = os.environ.get('FLASK_ENV', 'development')
-app = create_app(config_name)
+def test_db_connection():
+    """Testa a conexão com o banco de dados"""
+    try:
+        with app.app_context():
+            # Testa conexão
+            with db.engine.connect() as connection:
+                result = connection.execute(text('SELECT 1'))
+                print("✅ Conexão com o banco de dados estabelecida!")
+                
+                # Verifica se consegue acessar a tabela USUARIOS
+                try:
+                    result = connection.execute(text('SELECT COUNT(*) FROM "USUARIOS"'))
+                    count = result.fetchone()[0]
+                    print(f"✅ Tabela USUARIOS encontrada!")
+                    print(f"📊 Total de usuários no banco: {count}")
+                    
+                    # Verifica se há usuários com senha
+                    result = connection.execute(text("""
+                        SELECT COUNT(*) FROM "USUARIOS" 
+                        WHERE password IS NOT NULL AND password != ''
+                    """))
+                    with_password = result.fetchone()[0]
+                    print(f"🔑 Usuários com senha configurada: {with_password}")
+                    
+                except Exception as e:
+                    print(f"⚠️ Erro ao acessar tabela USUARIOS: {e}")
+                    
+    except Exception as e:
+        print(f"❌ Erro ao conectar com o banco: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
-    # Configurações do servidor
-    host = os.environ.get('FLASK_HOST', '0.0.0.0')
-    port = int(os.environ.get('FLASK_PORT', 5556))
+    print("""
+╔═══════════════════════════════════════════╗
+║       Fast BI iGreen API v2.0             ║
+╠═══════════════════════════════════════════╣
+║  Ambiente: {}                     ║
+║  Host: 0.0.0.0                            ║
+║  Porta: 5555                              ║
+║  Database: IGREEN                         ║
+║  Modo: READ-ONLY (Somente Leitura)        ║
+╚═══════════════════════════════════════════╝
+    """.format(os.getenv('FLASK_ENV', 'development').ljust(11)))
     
-    print(f"""
-    ╔═══════════════════════════════════════════╗
-    ║   Fast BI iGreen API v2.0 - READ ONLY     ║
-    ╠═══════════════════════════════════════════╣
-    ║  Modo: SOMENTE LEITURA                    ║
-    ║  Ambiente: {config_name:31}║
-    ║  Host: {host:35}║
-    ║  Porta: {port:34}║
-    ║  Database: {os.environ.get('DB_NAME'):31}║
-    ╚═══════════════════════════════════════════╝
+    print("🚀 Servidor iniciando...")
+    print("📍 API: http://localhost:5555/api")
+    print("📍 Health Check: http://localhost:5555/api/health\n")
     
-    🔍 Servidor em modo SOMENTE LEITURA
-    📍 API: http://localhost:{port}/api
-    📍 Health Check: http://localhost:{port}/api/health
+    # Testar conexão com o banco
+    test_db_connection()
     
-    ⚠️  Autenticação usando dados locais (sem banco)
-    
-    Pressione CTRL+C para parar
-    """)
-    
+    # Iniciar servidor
     app.run(
-        host=host,
-        port=port,
-        debug=app.config['DEBUG']
+        host='0.0.0.0',
+        port=5555,
+        debug=True
     )
