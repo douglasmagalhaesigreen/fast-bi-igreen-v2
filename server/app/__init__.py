@@ -48,6 +48,9 @@ def create_app(config_name='development'):
     # Registrar blueprints
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # Importar rotas do dashboard
+    from app.routes.dashboard import dashboard_bp
+    app.register_blueprint(dashboard_bp)
     
     # Health check
     @app.route('/api/health')

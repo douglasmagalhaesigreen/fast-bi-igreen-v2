@@ -1,92 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import { dashboardService } from '../../services/api';
+import React from 'react';
+import { 
+  Activity, Users, DollarSign, TrendingUp, 
+  Battery, AlertTriangle, Zap, PieChart 
+} from 'lucide-react';
+import MetricCard from '../../components/dashboard/MetricCard';
 import LineChartComponent from '../../components/charts/LineChartComponent';
 import BarChartComponent from '../../components/charts/BarChartComponent';
 import PieChartComponent from '../../components/charts/PieChartComponent';
+import { useDashboardMetrics, useDashboardCharts } from '../../hooks/useDashboardData';
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
-  const [metrics, setMetrics] = useState(null);
-  const [chartData, setChartData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics();
+  const { consumoMensal, distribuicaoRegional } = useDashboardCharts();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const metricsRes = await dashboardService.getMetrics();
-        const chartsRes = await dashboardService.getChartData();
-        setMetrics(metricsRes.data);
-        setChartData(chartsRes.data);
-        setError('');
-      } catch (err) {
-        console.error("Falha ao buscar dados do dashboard:", err);
-        setError('Não foi possível carregar os dados do dashboard.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
+  if (metricsLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="w-12 h-12 animate-spin text-green-500" />
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
       </div>
     );
   }
 
-  if (error) {
-    return <div className="p-8 text-center text-red-500">{error}</div>;
-  }
-
   return (
-    <div className='p-8'>
-      <h1 className='text-3xl font-bold text-gray-800 dark:text-white mb-6'>Dashboard Principal</h1>
-      
-      {/* Cards de Métricas */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Total kWh</h2>
-          <p className='text-3xl font-bold text-green-600 dark:text-green-400'>{metrics?.kwhTotal?.toLocaleString('pt-BR') || 'N/A'}</p>
-        </div>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Clientes Ativos</h2>
-          <p className='text-3xl font-bold text-blue-600 dark:text-blue-400'>{metrics?.clientesAtivos?.toLocaleString('pt-BR') || 'N/A'}</p>
-          <p className='text-sm text-gray-500 dark:text-gray-400 mt-2'>+{metrics?.clientesNovos || 0} novos este mês</p>
-        </div>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Faturamento</h2>
-          <p className='text-3xl font-bold text-purple-600 dark:text-purple-400'>{metrics?.faturamento?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'N/A'}</p>
-        </div>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Eficiência</h2>
-          <p className='text-3xl font-bold text-orange-600 dark:text-orange-400'>{metrics?.eficiencia || 'N/A'}%</p>
-        </div>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Consumo Médio</h2>
-          <p className='text-3xl font-bold text-pink-600 dark:text-pink-400'>{metrics?.consumoMedio || 'N/A'} kWh</p>
-        </div>
-        <div className='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg'>
-          <h2 className='text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2'>Alertas</h2>
-          <p className='text-3xl font-bold text-red-600 dark:text-red-400'>{metrics?.alertas || 0}</p>
-        </div>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Dashboard Principal
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          Visão geral do sistema iGreen Energy
+        </p>
+      </div>
+
+      {/* Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Clientes Ativos"
+          value={metrics?.clientes_ativos}
+          change={metrics?.crescimento_clientes}
+          icon={Users}
+          color="blue"
+          format="number"
+        />
+        <MetricCard
+          title="Consumo Total"
+          value={metrics?.consumo_kwh}
+          icon={Zap}
+          color="green"
+          format="kwh"
+        />
+        <MetricCard
+          title="Faturamento"
+          value={metrics?.faturamento}
+          icon={DollarSign}
+          color="purple"
+          format="currency"
+        />
+        <MetricCard
+          title="Economia Gerada"
+          value={metrics?.economia_gerada}
+          icon={TrendingUp}
+          color="teal"
+          format="currency"
+        />
+      </div>
+
+      {/* Métricas Secundárias */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Clientes Faturados"
+          value={metrics?.clientes_faturados}
+          icon={Activity}
+          color="orange"
+          format="number"
+        />
+        <MetricCard
+          title="Ticket Médio"
+          value={metrics?.ticket_medio}
+          icon={PieChart}
+          color="pink"
+          format="currency"
+        />
+        <MetricCard
+          title="Taxa Inadimplência"
+          value={metrics?.taxa_inadimplencia}
+          icon={AlertTriangle}
+          color="orange"
+          format="percent"
+        />
+        <MetricCard
+          title="Novos Clientes"
+          value={metrics?.novos_clientes_mes}
+          change={metrics?.crescimento_clientes}
+          icon={Users}
+          color="green"
+          format="number"
+        />
       </div>
 
       {/* Gráficos */}
-      {chartData && (
-        <>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6'>
-            <LineChartComponent data={chartData.consumoMensal} title="Evolução do Consumo Mensal" />
-            <BarChartComponent data={chartData.dadosRegionais} title="Distribuição por Região" />
-          </div>
-          <div className='mt-6'>
-            <PieChartComponent data={chartData.distribuicaoTipo} title="Distribuição por Tipo de Cliente" />
-          </div>
-        </>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {consumoMensal.data && (
+          <LineChartComponent
+            data={consumoMensal.data}
+            title="Evolução do Consumo Mensal"
+            dataKey="consumo_total"
+            xAxisKey="mes"
+          />
+        )}
+        
+        {distribuicaoRegional.data && (
+          <BarChartComponent
+            data={distribuicaoRegional.data.por_regiao || []}
+            title="Distribuição por Região"
+            dataKey="clientes"
+            xAxisKey="regiao"
+          />
+        )}
+      </div>
+
+      {/* Gráfico de Pizza */}
+      {distribuicaoRegional.data && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PieChartComponent
+            data={distribuicaoRegional.data.por_regiao || []}
+            title="Distribuição de Clientes por Região"
+            dataKey="clientes"
+            nameKey="regiao"
+          />
+        </div>
       )}
     </div>
   );
