@@ -1,9 +1,13 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from sqlalchemy import text
 from datetime import datetime, timedelta
 from decimal import Decimal
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+import io
+import traceback
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -13,396 +17,409 @@ def decimal_to_float(obj):
         return float(obj)
     return obj
 
-@dashboard_bp.route('/api/dashboard/metrics', methods=['GET'])
+# ========================================
+# DASHBOARD COM ESTRUTURA DE FILTROS
+# PRONTO PARA RECEBER CARDS COM QUERIES
+# ========================================
+
+@dashboard_bp.route('/api/dashboard/available-dates', methods=['GET'])
 @jwt_required()
-def get_metrics():
+def get_available_dates():
     """
-    Retorna as métricas principais do dashboard
+    Retorna as datas disponíveis na base para o filtro
     """
     try:
         with db.engine.connect() as conn:
-            metrics = {}
-            
-            # 1. Total de Clientes Ativos
             result = conn.execute(text("""
-                SELECT COUNT(DISTINCT idcliente) as total 
-                FROM "CLIENTES" 
-                WHERE status = 'ATIVO' 
-                   OR (data_ativo IS NOT NULL AND dtcancelado IS NULL)
+                SELECT to_char("data cadastro", 'MM/YYYY') AS mes_ano,
+                       to_char("data cadastro", 'YYYY-MM') AS mes_valor,
+                       MIN("data cadastro") AS data_ordenacao
+                FROM public."V_CUSTOMER"
+                WHERE "data cadastro" IS NOT NULL
+                GROUP BY to_char("data cadastro", 'MM/YYYY'), to_char("data cadastro", 'YYYY-MM')
+                ORDER BY MIN("data cadastro") DESC
             """))
-            metrics['clientes_ativos'] = result.fetchone()[0] or 0
             
-            # 2. Consumo Total kWh (último mês)
-            result = conn.execute(text("""
-                SELECT 
-                    COALESCE(SUM(energiainjetada), 0) as total_kwh,
-                    COUNT(DISTINCT idcliente) as clientes_faturados
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                  AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE)
-            """))
-            row = result.fetchone()
-            metrics['consumo_kwh'] = row[0] or 0
-            metrics['clientes_faturados'] = row[1] or 0
+            dates = []
+            for row in result:
+                dates.append({
+                    'label': row[0],  # MM/YYYY format
+                    'value': row[1]   # YYYY-MM format
+                })
             
-            # 3. Faturamento Total (último mês)
-            result = conn.execute(text("""
-                SELECT 
-                    COALESCE(SUM(valorapagar), 0) as faturamento,
-                    COALESCE(AVG(valorapagar), 0) as ticket_medio
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                  AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE)
-                  AND dtpagamento IS NOT NULL
-            """))
-            row = result.fetchone()
-            metrics['faturamento'] = decimal_to_float(row[0])
-            metrics['ticket_medio'] = decimal_to_float(row[1])
-            
-            # 4. Taxa de Inadimplência
-            result = conn.execute(text("""
-                SELECT 
-                    COUNT(CASE WHEN dtpagamento IS NULL AND dtvencimento < CURRENT_DATE THEN 1 END) as inadimplentes,
-                    COUNT(*) as total
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                  AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE)
-            """))
-            row = result.fetchone()
-            inadimplentes = row[0] or 0
-            total = row[1] or 1
-            metrics['taxa_inadimplencia'] = round((inadimplentes / total) * 100, 2)
-            
-            # 5. Economia Gerada
-            result = conn.execute(text("""
-                SELECT 
-                    COALESCE(SUM(valorseria - valorapagar), 0) as economia
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                  AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE)
-                  AND valorseria IS NOT NULL 
-                  AND valorapagar IS NOT NULL
-            """))
-            metrics['economia_gerada'] = decimal_to_float(result.fetchone()[0])
-            
-            # 6. Crescimento de Clientes (mês atual vs mês anterior)
-            result = conn.execute(text("""
-                WITH mes_atual AS (
-                    SELECT COUNT(*) as total 
-                    FROM "CLIENTES" 
-                    WHERE DATE_TRUNC('month', data_ativo) = DATE_TRUNC('month', CURRENT_DATE)
-                ),
-                mes_anterior AS (
-                    SELECT COUNT(*) as total 
-                    FROM "CLIENTES" 
-                    WHERE DATE_TRUNC('month', data_ativo) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                )
-                SELECT 
-                    ma.total as atual,
-                    mp.total as anterior,
-                    CASE 
-                        WHEN mp.total > 0 THEN ((ma.total - mp.total)::float / mp.total) * 100
-                        ELSE 0 
-                    END as crescimento
-                FROM mes_atual ma, mes_anterior mp
-            """))
-            row = result.fetchone()
-            metrics['novos_clientes_mes'] = row[0] or 0
-            metrics['crescimento_clientes'] = round(row[2] or 0, 2)
-            
-            return jsonify(metrics), 200
+            return jsonify(dates), 200
             
     except Exception as e:
-        print(f"Erro em get_metrics: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar métricas'}), 500
+        print(f"Erro em get_available_dates: {str(e)}")
+        return jsonify({'error': 'Erro ao buscar datas disponíveis'}), 500
 
 
-@dashboard_bp.route('/api/dashboard/chart/consumo-mensal', methods=['GET'])
+@dashboard_bp.route('/api/dashboard/card/<card_name>', methods=['GET'])
 @jwt_required()
-def get_consumo_mensal():
+def get_card_data(card_name):
     """
-    Retorna dados de consumo dos últimos 6 meses
+    Endpoint genérico para dados de cards
+    Suporta filtro de data e modo consolidado
     """
     try:
-        months = request.args.get('months', 6, type=int)
+        # Parâmetros da requisição
+        date_filter = request.args.get('date')  # YYYY-MM format
+        consolidated = request.args.get('consolidated', 'false').lower() == 'true'
         
         with db.engine.connect() as conn:
-            result = conn.execute(text("""
-                SELECT 
-                    TO_CHAR(mesreferencia, 'Mon/YY') as mes,
-                    DATE_PART('month', mesreferencia) as mes_num,
-                    DATE_PART('year', mesreferencia) as ano,
-                    SUM(energiainjetada) as consumo_total,
-                    AVG(energiainjetada) as consumo_medio,
-                    COUNT(DISTINCT idcliente) as num_clientes
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= CURRENT_DATE - INTERVAL :months
-                GROUP BY mesreferencia, TO_CHAR(mesreferencia, 'Mon/YY')
-                ORDER BY mesreferencia ASC
-            """), {'months': f'{months} months'})
+            result = {'value': 0, 'available': False}
             
-            data = []
-            for row in result:
-                data.append({
-                    'mes': row[0],
-                    'consumo_total': float(row[3] or 0),
-                    'consumo_medio': float(row[4] or 0),
-                    'num_clientes': row[5] or 0
-                })
-            
-            return jsonify(data), 200
-            
-    except Exception as e:
-        print(f"Erro em get_consumo_mensal: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar consumo mensal'}), 500
-
-
-@dashboard_bp.route('/api/dashboard/chart/distribuicao-regional', methods=['GET'])
-@jwt_required()
-def get_distribuicao_regional():
-    """
-    Retorna distribuição de clientes por estado/região
-    """
-    try:
-        with db.engine.connect() as conn:
-            # Por estado
-            result = conn.execute(text("""
-                SELECT 
-                    COALESCE(ufconsumo, uf) as estado,
-                    COUNT(DISTINCT c.idcliente) as total_clientes,
-                    SUM(r.energiainjetada) as consumo_total,
-                    AVG(r.valorapagar) as ticket_medio
-                FROM "CLIENTES" c
-                LEFT JOIN (
-                    SELECT idcliente, energiainjetada, valorapagar
-                    FROM "RCB_CLIENTES"
-                    WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                ) r ON c.idcliente = r.idcliente
-                WHERE c.status = 'ATIVO' OR (c.data_ativo IS NOT NULL AND c.dtcancelado IS NULL)
-                GROUP BY COALESCE(ufconsumo, uf)
-                HAVING COALESCE(ufconsumo, uf) IS NOT NULL
-                ORDER BY total_clientes DESC
-            """))
-            
-            estados = []
-            for row in result:
-                estados.append({
-                    'estado': row[0],
-                    'clientes': row[1] or 0,
-                    'consumo': float(row[2] or 0),
-                    'ticket_medio': decimal_to_float(row[3] or 0)
-                })
-            
-            # Agrupar por região
-            regioes = {
-                'Norte': ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'],
-                'Nordeste': ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
-                'Centro-Oeste': ['DF', 'GO', 'MT', 'MS'],
-                'Sudeste': ['ES', 'MG', 'RJ', 'SP'],
-                'Sul': ['PR', 'RS', 'SC']
-            }
-            
-            distribuicao_regional = []
-            for regiao, ufs in regioes.items():
-                total_clientes = sum(e['clientes'] for e in estados if e['estado'] in ufs)
-                total_consumo = sum(e['consumo'] for e in estados if e['estado'] in ufs)
+            # Card: Total de Ativações
+            if card_name == 'total_ativacoes':
+                if consolidated:
+                    # Query do número consolidado
+                    query_result = conn.execute(text("""
+                        SELECT COUNT(*) AS total_clientes_consolidados
+                        FROM public."V_CUSTOMER"
+                        WHERE "data ativo" IS NOT NULL
+                    """))
+                else:
+                    # Converter YYYY-MM para MM/YYYY
+                    if date_filter:
+                        year, month = date_filter.split('-')
+                        date_format = f"{month}/{year}"
+                        
+                        # Query do número por mês
+                        query_result = conn.execute(text("""
+                            SELECT COUNT(*) AS total_clientes_no_mes
+                            FROM public."V_CUSTOMER"
+                            WHERE to_char("data ativo", 'MM/YYYY') = :date_format
+                        """), {'date_format': date_format})
+                    else:
+                        query_result = None
                 
-                if total_clientes > 0:
-                    distribuicao_regional.append({
-                        'regiao': regiao,
-                        'clientes': total_clientes,
-                        'consumo': total_consumo,
-                        'percentual': 0  # Será calculado no frontend
-                    })
+                if query_result:
+                    row = query_result.fetchone()
+                    result = {
+                        'value': row[0] if row else 0,
+                        'available': True
+                    }
             
-            # Calcular percentuais
-            total = sum(r['clientes'] for r in distribuicao_regional)
-            for r in distribuicao_regional:
-                r['percentual'] = round((r['clientes'] / total) * 100, 2) if total > 0 else 0
-            
-            return jsonify({
-                'por_estado': estados[:10],  # Top 10 estados
-                'por_regiao': distribuicao_regional
-            }), 200
+            return jsonify(result), 200
             
     except Exception as e:
-        print(f"Erro em get_distribuicao_regional: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar distribuição regional'}), 500
+        print(f"Erro em get_card_data para {card_name}: {str(e)}")
+        return jsonify({'error': f'Erro ao buscar dados do card {card_name}'}), 500
 
 
-@dashboard_bp.route('/api/dashboard/chart/faturamento-evolucao', methods=['GET'])
+def safe_excel_value(value):
+    """Converter valor para formato seguro para Excel"""
+    if value is None:
+        return ''
+    elif isinstance(value, Decimal):
+        return float(value)
+    elif isinstance(value, (datetime, )):
+        # Datas datetime para string
+        return value.strftime('%Y-%m-%d %H:%M:%S') if hasattr(value, 'hour') else value.strftime('%Y-%m-%d')
+    elif hasattr(value, 'date'):
+        # Objetos date para string
+        return value.strftime('%Y-%m-%d')
+    else:
+        # Qualquer outro tipo: converter para string
+        return str(value)
+
+
+@dashboard_bp.route('/api/dashboard/export/<card_name>', methods=['GET'])
 @jwt_required()
-def get_faturamento_evolucao():
+def export_card_data(card_name):
     """
-    Retorna evolução do faturamento e comparação com metas
+    Endpoint para exportar listas detalhadas em Excel
     """
     try:
-        with db.engine.connect() as conn:
-            result = conn.execute(text("""
-                SELECT 
-                    TO_CHAR(mesreferencia, 'Mon/YY') as mes,
-                    SUM(valorapagar) as faturamento_total,
-                    SUM(valorseria) as potencial_total,
-                    COUNT(DISTINCT idcliente) as clientes_pagantes,
-                    AVG(valorapagar) as ticket_medio,
-                    SUM(CASE WHEN dtpagamento IS NOT NULL THEN valorapagar ELSE 0 END) as recebido,
-                    SUM(CASE WHEN dtpagamento IS NULL AND dtvencimento < CURRENT_DATE THEN valorapagar ELSE 0 END) as inadimplente
-                FROM "RCB_CLIENTES"
-                WHERE mesreferencia >= CURRENT_DATE - INTERVAL '12 months'
-                GROUP BY mesreferencia, TO_CHAR(mesreferencia, 'Mon/YY')
-                ORDER BY mesreferencia ASC
-            """))
-            
-            data = []
-            for row in result:
-                data.append({
-                    'mes': row[0],
-                    'faturamento': decimal_to_float(row[1]),
-                    'potencial': decimal_to_float(row[2]),
-                    'clientes': row[3] or 0,
-                    'ticket_medio': decimal_to_float(row[4]),
-                    'recebido': decimal_to_float(row[5]),
-                    'inadimplente': decimal_to_float(row[6])
-                })
-            
-            return jsonify(data), 200
-            
-    except Exception as e:
-        print(f"Erro em get_faturamento_evolucao: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar evolução do faturamento'}), 500
-
-
-@dashboard_bp.route('/api/dashboard/chart/top-clientes', methods=['GET'])
-@jwt_required()
-def get_top_clientes():
-    """
-    Retorna top clientes por consumo/faturamento
-    """
-    try:
-        limit = request.args.get('limit', 10, type=int)
+        print(f"=== Iniciando exportação {card_name} ===")
+        
+        # Parâmetros da requisição
+        date_filter = request.args.get('date')
+        consolidated = request.args.get('consolidated', 'false').lower() == 'true'
         
         with db.engine.connect() as conn:
-            result = conn.execute(text("""
-                SELECT 
-                    c.nome,
-                    c.razao,
-                    c.ufconsumo,
-                    SUM(r.energiainjetada) as consumo_total,
-                    SUM(r.valorapagar) as faturamento_total,
-                    AVG(r.valorapagar) as ticket_medio,
-                    COUNT(r.idrcb) as num_faturas
-                FROM "CLIENTES" c
-                INNER JOIN "RCB_CLIENTES" r ON c.idcliente = r.idcliente
-                WHERE r.mesreferencia >= CURRENT_DATE - INTERVAL '3 months'
-                GROUP BY c.idcliente, c.nome, c.razao, c.ufconsumo
-                ORDER BY faturamento_total DESC
-                LIMIT :limit
-            """), {'limit': limit})
+            query_result = None
             
-            data = []
-            for row in result:
-                nome_display = row[1] if row[1] else row[0]  # Usar razão social se disponível
-                data.append({
-                    'nome': nome_display[:50] if nome_display else 'N/A',
-                    'estado': row[2] or 'N/A',
-                    'consumo': float(row[3] or 0),
-                    'faturamento': decimal_to_float(row[4]),
-                    'ticket_medio': decimal_to_float(row[5]),
-                    'num_faturas': row[6] or 0
-                })
+            # Card: Total de Ativações
+            if card_name == 'total_ativacoes':
+                if consolidated:
+                    print("Executando query consolidada...")
+                    query_result = conn.execute(text("""
+                        SELECT "código"::text as codigo,
+                               COALESCE("nome"::text, '') as nome,
+                               COALESCE("data ativo"::text, '') as data_ativo,
+                               COALESCE("instalacao"::text, '') as instalacao,
+                               COALESCE("celular"::text, '') as celular,
+                               COALESCE("cidade"::text, '') as cidade,
+                               COALESCE("região"::text, '') as regiao,
+                               COALESCE("média consumo"::text, '') as media_consumo,
+                               COALESCE("devolutiva"::text, '') as devolutiva,
+                               COALESCE("data cadastro"::text, '') as data_cadastro,
+                               COALESCE("cpf"::text, '') as cpf,
+                               COALESCE("numero cliente"::text, '') as numero_cliente,
+                               COALESCE("data ult. alteração"::text, '') as data_ult_alteracao,
+                               COALESCE("celular 2"::text, '') as celular_2,
+                               COALESCE("email"::text, '') as email,
+                               COALESCE("rg"::text, '') as rg,
+                               COALESCE("orgão emissor"::text, '') as orgao_emissor,
+                               COALESCE("data injeção"::text, '') as data_injecao,
+                               COALESCE("id licenciado"::text, '') as id_licenciado,
+                               COALESCE("licenciado"::text, '') as licenciado,
+                               COALESCE("celular consultor"::text, '') as celular_consultor,
+                               COALESCE("cep"::text, '') as cep,
+                               COALESCE("endereco"::text, '') as endereco,
+                               COALESCE("numero"::text, '') as numero,
+                               COALESCE("bairro"::text, '') as bairro,
+                               COALESCE("complemento"::text, '') as complemento,
+                               COALESCE("cnpj"::text, '') as cnpj,
+                               COALESCE("razao"::text, '') as razao,
+                               COALESCE("fantasia"::text, '') as fantasia,
+                               COALESCE("UF consumo"::text, '') as uf_consumo,
+                               COALESCE("classificacao"::text, '') as classificacao,
+                               COALESCE("chave contrato"::text, '') as chave_contrato,
+                               COALESCE("chave assinatura cliente"::text, '') as chave_assinatura_cliente,
+                               COALESCE("chave solatio"::text, '') as chave_solatio,
+                               COALESCE("cashback"::text, '') as cashback,
+                               COALESCE("codigo solatio"::text, '') as codigo_solatio,
+                               COALESCE("enviado comerc"::text, '') as enviado_comerc,
+                               COALESCE("obs"::text, '') as obs,
+                               COALESCE("posvenda"::text, '') as posvenda,
+                               COALESCE("retido"::text, '') as retido,
+                               COALESCE("verificado"::text, '') as verificado,
+                               COALESCE("rateio"::text, '') as rateio,
+                               COALESCE("validado sucesso"::text, '') as validado_sucesso,
+                               COALESCE("status sucesso"::text, '') as status_sucesso,
+                               COALESCE("doc. enviado"::text, '') as doc_enviado,
+                               COALESCE("link Documento"::text, '') as link_documento,
+                               COALESCE("link Conta Energia"::text, '') as link_conta_energia,
+                               COALESCE("link Cartão CNPJ"::text, '') as link_cartao_cnpj,
+                               COALESCE("link Documento Frente"::text, '') as link_documento_frente,
+                               COALESCE("link Documento Verso"::text, '') as link_documento_verso,
+                               COALESCE("link Conta Energia 2"::text, '') as link_conta_energia_2,
+                               COALESCE("link Contrato Social"::text, '') as link_contrato_social,
+                               COALESCE("link Comprovante de pagamento"::text, '') as link_comprovante_pagamento,
+                               COALESCE("link Estatuto Convenção"::text, '') as link_estatuto_convencao,
+                               COALESCE("senha pdf"::text, '') as senha_pdf,
+                               COALESCE("usuario ult alteracao"::text, '') as usuario_ult_alteracao,
+                               COALESCE("elegibilidade"::text, '') as elegibilidade,
+                               COALESCE("id plano club pj"::text, '') as id_plano_club_pj,
+                               COALESCE("data cancelamento"::text, '') as data_cancelamento,
+                               COALESCE("data ativação original"::text, '') as data_ativacao_original,
+                               COALESCE("fornecedora"::text, '') as fornecedora,
+                               COALESCE("desconto cliente"::text, '') as desconto_cliente,
+                               COALESCE("data nascimento"::text, '') as data_nascimento,
+                               COALESCE("Origem"::text, '') as origem,
+                               COALESCE("Forma de pagamento"::text, '') as forma_pagamento,
+                               COALESCE("Status Financeiro"::text, '') as status_financeiro,
+                               COALESCE("Login Distribuidora"::text, '') as login_distribuidora,
+                               COALESCE("Senha Distribuidora"::text, '') as senha_distribuidora,
+                               COALESCE("Cliente"::text, '') as cliente,
+                               COALESCE("Representante"::text, '') as representante,
+                               COALESCE("nacionalidade"::text, '') as nacionalidade,
+                               COALESCE("profissao"::text, '') as profissao,
+                               COALESCE("estadocivil"::text, '') as estadocivil,
+                               COALESCE("forma pagamento"::text, '') as forma_pagamento_2,
+                               COALESCE("Observação Compartilhada"::text, '') as observacao_compartilhada,
+                               COALESCE("Auto Conexão"::text, '') as auto_conexao,
+                               COALESCE("Link assinatura"::text, '') as link_assinatura,
+                               COALESCE("Link Documentos"::text, '') as link_documentos,
+                               COALESCE("Data Validado Sucesso"::text, '') as data_validado_sucesso,
+                               COALESCE("Devolutiva interna"::text, '') as devolutiva_interna
+                        FROM public."V_CUSTOMER"
+                        WHERE "data ativo" IS NOT NULL
+                        ORDER BY "código" ASC
+                    """))
+                else:
+                    if date_filter:
+                        year, month = date_filter.split('-')
+                        date_format = f"{month}/{year}"
+                        print(f"Executando query mensal: {date_format}")
+                        
+                        query_result = conn.execute(text("""
+                            SELECT "código"::text as codigo,
+                                   COALESCE("nome"::text, '') as nome,
+                                   COALESCE("data ativo"::text, '') as data_ativo,
+                                   COALESCE("instalacao"::text, '') as instalacao,
+                                   COALESCE("celular"::text, '') as celular,
+                                   COALESCE("cidade"::text, '') as cidade,
+                                   COALESCE("região"::text, '') as regiao,
+                                   COALESCE("média consumo"::text, '') as media_consumo,
+                                   COALESCE("devolutiva"::text, '') as devolutiva,
+                                   COALESCE("data cadastro"::text, '') as data_cadastro,
+                                   COALESCE("cpf"::text, '') as cpf,
+                                   COALESCE("numero cliente"::text, '') as numero_cliente,
+                                   COALESCE("data ult. alteração"::text, '') as data_ult_alteracao,
+                                   COALESCE("celular 2"::text, '') as celular_2,
+                                   COALESCE("email"::text, '') as email,
+                                   COALESCE("rg"::text, '') as rg,
+                                   COALESCE("orgão emissor"::text, '') as orgao_emissor,
+                                   COALESCE("data injeção"::text, '') as data_injecao,
+                                   COALESCE("id licenciado"::text, '') as id_licenciado,
+                                   COALESCE("licenciado"::text, '') as licenciado,
+                                   COALESCE("celular consultor"::text, '') as celular_consultor,
+                                   COALESCE("cep"::text, '') as cep,
+                                   COALESCE("endereco"::text, '') as endereco,
+                                   COALESCE("numero"::text, '') as numero,
+                                   COALESCE("bairro"::text, '') as bairro,
+                                   COALESCE("complemento"::text, '') as complemento,
+                                   COALESCE("cnpj"::text, '') as cnpj,
+                                   COALESCE("razao"::text, '') as razao,
+                                   COALESCE("fantasia"::text, '') as fantasia,
+                                   COALESCE("UF consumo"::text, '') as uf_consumo,
+                                   COALESCE("classificacao"::text, '') as classificacao,
+                                   COALESCE("chave contrato"::text, '') as chave_contrato,
+                                   COALESCE("chave assinatura cliente"::text, '') as chave_assinatura_cliente,
+                                   COALESCE("chave solatio"::text, '') as chave_solatio,
+                                   COALESCE("cashback"::text, '') as cashback,
+                                   COALESCE("codigo solatio"::text, '') as codigo_solatio,
+                                   COALESCE("enviado comerc"::text, '') as enviado_comerc,
+                                   COALESCE("obs"::text, '') as obs,
+                                   COALESCE("posvenda"::text, '') as posvenda,
+                                   COALESCE("retido"::text, '') as retido,
+                                   COALESCE("verificado"::text, '') as verificado,
+                                   COALESCE("rateio"::text, '') as rateio,
+                                   COALESCE("validado sucesso"::text, '') as validado_sucesso,
+                                   COALESCE("status sucesso"::text, '') as status_sucesso,
+                                   COALESCE("doc. enviado"::text, '') as doc_enviado,
+                                   COALESCE("link Documento"::text, '') as link_documento,
+                                   COALESCE("link Conta Energia"::text, '') as link_conta_energia,
+                                   COALESCE("link Cartão CNPJ"::text, '') as link_cartao_cnpj,
+                                   COALESCE("link Documento Frente"::text, '') as link_documento_frente,
+                                   COALESCE("link Documento Verso"::text, '') as link_documento_verso,
+                                   COALESCE("link Conta Energia 2"::text, '') as link_conta_energia_2,
+                                   COALESCE("link Contrato Social"::text, '') as link_contrato_social,
+                                   COALESCE("link Comprovante de pagamento"::text, '') as link_comprovante_pagamento,
+                                   COALESCE("link Estatuto Convenção"::text, '') as link_estatuto_convencao,
+                                   COALESCE("senha pdf"::text, '') as senha_pdf,
+                                   COALESCE("usuario ult alteracao"::text, '') as usuario_ult_alteracao,
+                                   COALESCE("elegibilidade"::text, '') as elegibilidade,
+                                   COALESCE("id plano club pj"::text, '') as id_plano_club_pj,
+                                   COALESCE("data cancelamento"::text, '') as data_cancelamento,
+                                   COALESCE("data ativação original"::text, '') as data_ativacao_original,
+                                   COALESCE("fornecedora"::text, '') as fornecedora,
+                                   COALESCE("desconto cliente"::text, '') as desconto_cliente,
+                                   COALESCE("data nascimento"::text, '') as data_nascimento,
+                                   COALESCE("Origem"::text, '') as origem,
+                                   COALESCE("Forma de pagamento"::text, '') as forma_pagamento,
+                                   COALESCE("Status Financeiro"::text, '') as status_financeiro,
+                                   COALESCE("Login Distribuidora"::text, '') as login_distribuidora,
+                                   COALESCE("Senha Distribuidora"::text, '') as senha_distribuidora,
+                                   COALESCE("Cliente"::text, '') as cliente,
+                                   COALESCE("Representante"::text, '') as representante,
+                                   COALESCE("nacionalidade"::text, '') as nacionalidade,
+                                   COALESCE("profissao"::text, '') as profissao,
+                                   COALESCE("estadocivil"::text, '') as estadocivil,
+                                   COALESCE("forma pagamento"::text, '') as forma_pagamento_2,
+                                   COALESCE("Observação Compartilhada"::text, '') as observacao_compartilhada,
+                                   COALESCE("Auto Conexão"::text, '') as auto_conexao,
+                                   COALESCE("Link assinatura"::text, '') as link_assinatura,
+                                   COALESCE("Link Documentos"::text, '') as link_documentos,
+                                   COALESCE("Data Validado Sucesso"::text, '') as data_validado_sucesso,
+                                   COALESCE("Devolutiva interna"::text, '') as devolutiva_interna
+                            FROM public."V_CUSTOMER"
+                            WHERE to_char("data ativo", 'MM/YYYY') = :date_format
+                            ORDER BY "código" ASC
+                        """), {'date_format': date_format})
             
-            return jsonify(data), 200
+            if query_result is None:
+                return jsonify({'error': 'Nenhum dado encontrado'}), 404
+            
+            # Obter dados
+            print("Obtendo dados da query...")
+            rows = query_result.fetchall()
+            if not rows:
+                return jsonify({'error': 'Nenhum registro encontrado'}), 404
+            
+            print(f"Processando {len(rows)} registros...")
+            
+            # Obter nomes das colunas
+            column_names = list(query_result.keys())
+            
+            # Criar arquivo Excel
+            print("Criando arquivo Excel...")
+            wb = Workbook()
+            ws = wb.active
+            
+            # Nome da planilha
+            sheet_name = 'Consolidado' if consolidated else date_filter.replace('-', '_')
+            ws.title = sheet_name
+            
+            # Escrever cabeçalhos
+            for col_idx, header in enumerate(column_names, 1):
+                ws.cell(row=1, column=col_idx, value=str(header))
+            
+            # Escrever dados com tratamento robusto
+            for row_idx, row_data in enumerate(rows, 2):
+                if row_idx % 1000 == 0:  # Log a cada 1000 linhas
+                    print(f"Processando linha {row_idx}...")
+                
+                for col_idx, cell_value in enumerate(row_data, 1):
+                    try:
+                        safe_value = safe_excel_value(cell_value)
+                        ws.cell(row=row_idx, column=col_idx, value=safe_value)
+                    except Exception as cell_error:
+                        # Em caso de erro, usar string vazia
+                        print(f"Erro na célula [{row_idx}, {col_idx}]: {str(cell_error)}")
+                        ws.cell(row=row_idx, column=col_idx, value='')
+            
+            # Ajustar largura das colunas
+            print("Ajustando largura das colunas...")
+            for column_cells in ws.columns:
+                length = max(len(str(cell.value or '')) for cell in column_cells)
+                ws.column_dimensions[get_column_letter(column_cells[0].column)].width = min(length + 2, 50)
+            
+            # Salvar Excel em buffer
+            print("Salvando arquivo Excel...")
+            excel_buffer = io.BytesIO()
+            wb.save(excel_buffer)
+            excel_buffer.seek(0)
+            
+            # Nome do arquivo
+            period = 'consolidado' if consolidated else date_filter.replace('-', '')
+            filename = f"total_ativacoes_{period}.xlsx"
+            
+            print(f"Enviando arquivo: {filename}")
+            
+            return send_file(
+                excel_buffer,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
             
     except Exception as e:
-        print(f"Erro em get_top_clientes: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar top clientes'}), 500
+        print(f"Erro geral em export_card_data para {card_name}: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Erro ao exportar dados: {str(e)}'}), 500
 
 
-@dashboard_bp.route('/api/dashboard/kpis', methods=['GET'])
-@jwt_required()
-def get_kpis():
-    """
-    Retorna KPIs principais com comparação período anterior
-    """
-    try:
-        with db.engine.connect() as conn:
-            # Período atual (último mês completo)
-            result = conn.execute(text("""
-                WITH periodo_atual AS (
-                    SELECT 
-                        COUNT(DISTINCT idcliente) as clientes,
-                        SUM(energiainjetada) as consumo,
-                        SUM(valorapagar) as faturamento,
-                        AVG(valorapagar) as ticket_medio,
-                        SUM(CASE WHEN dtpagamento IS NOT NULL THEN 1 ELSE 0 END)::float / 
-                            NULLIF(COUNT(*), 0) * 100 as taxa_pagamento
-                    FROM "RCB_CLIENTES"
-                    WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                      AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE)
-                ),
-                periodo_anterior AS (
-                    SELECT 
-                        COUNT(DISTINCT idcliente) as clientes,
-                        SUM(energiainjetada) as consumo,
-                        SUM(valorapagar) as faturamento,
-                        AVG(valorapagar) as ticket_medio,
-                        SUM(CASE WHEN dtpagamento IS NOT NULL THEN 1 ELSE 0 END)::float / 
-                            NULLIF(COUNT(*), 0) * 100 as taxa_pagamento
-                    FROM "RCB_CLIENTES"
-                    WHERE mesreferencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '2 months')
-                      AND mesreferencia < DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-                )
-                SELECT 
-                    pa.clientes as clientes_atual,
-                    pp.clientes as clientes_anterior,
-                    pa.consumo as consumo_atual,
-                    pp.consumo as consumo_anterior,
-                    pa.faturamento as faturamento_atual,
-                    pp.faturamento as faturamento_anterior,
-                    pa.ticket_medio as ticket_atual,
-                    pp.ticket_medio as ticket_anterior,
-                    pa.taxa_pagamento as taxa_pagamento_atual,
-                    pp.taxa_pagamento as taxa_pagamento_anterior
-                FROM periodo_atual pa, periodo_anterior pp
-            """))
-            
-            row = result.fetchone()
-            
-            def calc_variacao(atual, anterior):
-                if anterior and anterior > 0:
-                    return round(((atual - anterior) / anterior) * 100, 2)
-                return 0
-            
-            kpis = {
-                'clientes': {
-                    'atual': row[0] or 0,
-                    'anterior': row[1] or 0,
-                    'variacao': calc_variacao(row[0] or 0, row[1] or 0)
-                },
-                'consumo': {
-                    'atual': float(row[2] or 0),
-                    'anterior': float(row[3] or 0),
-                    'variacao': calc_variacao(row[2] or 0, row[3] or 0)
-                },
-                'faturamento': {
-                    'atual': decimal_to_float(row[4]),
-                    'anterior': decimal_to_float(row[5]),
-                    'variacao': calc_variacao(row[4] or 0, row[5] or 0)
-                },
-                'ticket_medio': {
-                    'atual': decimal_to_float(row[6]),
-                    'anterior': decimal_to_float(row[7]),
-                    'variacao': calc_variacao(row[6] or 0, row[7] or 0)
-                },
-                'taxa_pagamento': {
-                    'atual': round(row[8] or 0, 2),
-                    'anterior': round(row[9] or 0, 2),
-                    'variacao': calc_variacao(row[8] or 0, row[9] or 0)
-                }
-            }
-            
-            return jsonify(kpis), 200
-            
-    except Exception as e:
-        print(f"Erro em get_kpis: {str(e)}")
-        return jsonify({'error': 'Erro ao buscar KPIs'}), 500
+# ========================================
+# FUNÇÕES AUXILIARES
+# ========================================
+
+def calc_variacao(atual, anterior):
+    """Calcula variação percentual entre dois valores"""
+    if anterior and anterior > 0:
+        return round(((atual - anterior) / anterior) * 100, 2)
+    return 0
+
+
+def format_response_data(data, decimal_fields=None):
+    """Formata dados da resposta convertendo Decimal para float"""
+    if decimal_fields is None:
+        decimal_fields = []
+    
+    if isinstance(data, list):
+        return [format_response_data(item, decimal_fields) for item in data]
+    elif isinstance(data, dict):
+        formatted = {}
+        for key, value in data.items():
+            if key in decimal_fields and isinstance(value, Decimal):
+                formatted[key] = decimal_to_float(value)
+            elif isinstance(value, (dict, list)):
+                formatted[key] = format_response_data(value, decimal_fields)
+            else:
+                formatted[key] = decimal_to_float(value) if isinstance(value, Decimal) else value
+        return formatted
+    else:
+        return decimal_to_float(data) if isinstance(data, Decimal) else data

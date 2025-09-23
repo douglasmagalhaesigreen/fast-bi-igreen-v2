@@ -1,9 +1,21 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Download, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const MetricCard = ({ title, value, change, icon: Icon, color = 'blue', format = 'number' }) => {
+const MetricCard = ({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  color = 'blue', 
+  format = 'number',
+  loading = false,
+  exporting = false,
+  onClick,
+  clickable = false
+}) => {
   const formatValue = (val) => {
+    if (loading) return '...';
     if (!val && val !== 0) return '---';
     
     switch (format) {
@@ -51,25 +63,42 @@ const MetricCard = ({ title, value, change, icon: Icon, color = 'blue', format =
     teal: 'from-teal-400 to-teal-600',
   };
 
+  const handleClick = () => {
+    if (clickable && onClick && !loading && !exporting) {
+      onClick();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+      className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-200
+        ${clickable ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer' : 'hover:shadow-xl'}
+        ${loading || exporting ? 'animate-pulse' : ''}
+        ${exporting ? 'ring-2 ring-green-500/20' : ''}`}
+      onClick={handleClick}
     >
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg bg-gradient-to-br ${colorClasses[color]}`}>
-          <Icon className="w-6 h-6 text-white" />
+        <div className={`p-3 rounded-lg bg-gradient-to-br ${colorClasses[color]} relative`}>
+          {loading ? (
+            <Loader2 className="w-6 h-6 text-white animate-spin" />
+          ) : (
+            <Icon className="w-6 h-6 text-white" />
+          )}
         </div>
-        {change !== undefined && (
-          <div className={`flex items-center space-x-1 ${getTrendColor()}`}>
-            {getTrendIcon()}
-            <span className="text-sm font-medium">
-              {Math.abs(change).toFixed(1)}%
-            </span>
-          </div>
-        )}
+        
+        <div className="flex items-center space-x-2">
+          {change !== undefined && !exporting && (
+            <div className={`flex items-center space-x-1 ${getTrendColor()}`}>
+              {getTrendIcon()}
+              <span className="text-sm font-medium">
+                {Math.abs(change).toFixed(1)}%
+              </span>
+            </div>
+          )}
+        </div>
       </div>
       
       <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -78,6 +107,12 @@ const MetricCard = ({ title, value, change, icon: Icon, color = 'blue', format =
       <p className="text-2xl font-bold text-gray-900 dark:text-white">
         {formatValue(value)}
       </p>
+      
+      {clickable && exporting && (
+        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          Gerando Excel...
+        </div>
+      )}
     </motion.div>
   );
 };
