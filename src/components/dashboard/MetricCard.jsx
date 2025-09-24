@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus, Download, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MetricCard = ({ 
   title, 
@@ -74,12 +74,24 @@ const MetricCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-200
+      className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-200 relative overflow-visible
         ${clickable ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer' : 'hover:shadow-xl'}
-        ${loading || exporting ? 'animate-pulse' : ''}
-        ${exporting ? 'ring-2 ring-green-500/20' : ''}`}
+        ${loading && !exporting ? 'animate-pulse' : ''}
+        ${exporting ? 'ring-2 ring-green-500/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : ''}`}
       onClick={handleClick}
     >
+      {/* pulsing export indicator (animated) */}
+      <AnimatePresence>
+        {exporting && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.22 }}
+            className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full animate-ping-slow opacity-90 dark:opacity-100"
+          />
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg bg-gradient-to-br ${colorClasses[color]} relative`}>
           {loading ? (
@@ -108,11 +120,20 @@ const MetricCard = ({
         {formatValue(value)}
       </p>
       
-      {clickable && exporting && (
-        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Gerando Excel...
-        </div>
-      )}
+      {/* indicador de exportação posicionado sem afetar layout */}
+      <AnimatePresence>
+        {exporting && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.22 }}
+            className="absolute top-2 right-3 text-xs text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-2 py-1 rounded-md pointer-events-none shadow-sm"
+          >
+            Gerando Excel...
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

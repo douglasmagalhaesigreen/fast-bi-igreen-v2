@@ -374,9 +374,11 @@ def export_card_data(card_name):
             wb.save(excel_buffer)
             excel_buffer.seek(0)
             
-            # Nome do arquivo
-            period = 'consolidado' if consolidated else date_filter.replace('-', '')
-            filename = f"total_ativacoes_{period}.xlsx"
+            # Nome do arquivo com timestamp
+            # Garantir period seguro quando date_filter for None
+            period = 'consolidado' if consolidated else (date_filter.replace('-', '') if date_filter else 'sem_periodo')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"total_ativacoes_{period}_{timestamp}.xlsx"
             
             print(f"Enviando arquivo: {filename}")
             
