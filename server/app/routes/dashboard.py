@@ -128,7 +128,7 @@ def safe_excel_value(value):
 @jwt_required()
 def export_card_data(card_name):
     """
-    Endpoint para exportar listas detalhadas em Excel
+    Endpoint para exportar listas detalhadas em Excel ou retornar dados para prévia
     """
     try:
         print(f"=== Iniciando exportação {card_name} ===")
@@ -136,190 +136,123 @@ def export_card_data(card_name):
         # Parâmetros da requisição
         date_filter = request.args.get('date')
         consolidated = request.args.get('consolidated', 'false').lower() == 'true'
+        preview = request.args.get('preview', 'false').lower() == 'true'  # Novo parâmetro
         
         with db.engine.connect() as conn:
             query_result = None
             
             # Card: Total de Ativações
             if card_name == 'total_ativacoes':
+                # Query base com ordem das colunas EXATAMENTE igual
+                base_select = """
+                    SELECT "código"::text as codigo,
+                           COALESCE("nome"::text, '') as nome,
+                           COALESCE("data ativo"::text, '') as data_ativo,
+                           COALESCE("instalacao"::text, '') as instalacao,
+                           COALESCE("celular"::text, '') as celular,
+                           COALESCE("cidade"::text, '') as cidade,
+                           COALESCE("região"::text, '') as regiao,
+                           COALESCE("média consumo"::text, '') as media_consumo,
+                           COALESCE("devolutiva"::text, '') as devolutiva,
+                           COALESCE("data cadastro"::text, '') as data_cadastro,
+                           COALESCE("cpf"::text, '') as cpf,
+                           COALESCE("numero cliente"::text, '') as numero_cliente,
+                           COALESCE("data ult. alteração"::text, '') as data_ult_alteracao,
+                           COALESCE("celular 2"::text, '') as celular_2,
+                           COALESCE("email"::text, '') as email,
+                           COALESCE("rg"::text, '') as rg,
+                           COALESCE("orgão emissor"::text, '') as orgao_emissor,
+                           COALESCE("data injeção"::text, '') as data_injecao,
+                           COALESCE("id licenciado"::text, '') as id_licenciado,
+                           COALESCE("licenciado"::text, '') as licenciado,
+                           COALESCE("celular consultor"::text, '') as celular_consultor,
+                           COALESCE("cep"::text, '') as cep,
+                           COALESCE("endereco"::text, '') as endereco,
+                           COALESCE("numero"::text, '') as numero,
+                           COALESCE("bairro"::text, '') as bairro,
+                           COALESCE("complemento"::text, '') as complemento,
+                           COALESCE("cnpj"::text, '') as cnpj,
+                           COALESCE("razao"::text, '') as razao,
+                           COALESCE("fantasia"::text, '') as fantasia,
+                           COALESCE("UF consumo"::text, '') as uf_consumo,
+                           COALESCE("classificacao"::text, '') as classificacao,
+                           COALESCE("chave contrato"::text, '') as chave_contrato,
+                           COALESCE("chave assinatura cliente"::text, '') as chave_assinatura_cliente,
+                           COALESCE("chave solatio"::text, '') as chave_solatio,
+                           COALESCE("cashback"::text, '') as cashback,
+                           COALESCE("codigo solatio"::text, '') as codigo_solatio,
+                           COALESCE("enviado comerc"::text, '') as enviado_comerc,
+                           COALESCE("obs"::text, '') as obs,
+                           COALESCE("posvenda"::text, '') as posvenda,
+                           COALESCE("retido"::text, '') as retido,
+                           COALESCE("verificado"::text, '') as verificado,
+                           COALESCE("rateio"::text, '') as rateio,
+                           COALESCE("validado sucesso"::text, '') as validado_sucesso,
+                           COALESCE("status sucesso"::text, '') as status_sucesso,
+                           COALESCE("doc. enviado"::text, '') as doc_enviado,
+                           COALESCE("link Documento"::text, '') as link_documento,
+                           COALESCE("link Conta Energia"::text, '') as link_conta_energia,
+                           COALESCE("link Cartão CNPJ"::text, '') as link_cartao_cnpj,
+                           COALESCE("link Documento Frente"::text, '') as link_documento_frente,
+                           COALESCE("link Documento Verso"::text, '') as link_documento_verso,
+                           COALESCE("link Conta Energia 2"::text, '') as link_conta_energia_2,
+                           COALESCE("link Contrato Social"::text, '') as link_contrato_social,
+                           COALESCE("link Comprovante de pagamento"::text, '') as link_comprovante_pagamento,
+                           COALESCE("link Estatuto Convenção"::text, '') as link_estatuto_convencao,
+                           COALESCE("senha pdf"::text, '') as senha_pdf,
+                           COALESCE("usuario ult alteracao"::text, '') as usuario_ult_alteracao,
+                           COALESCE("elegibilidade"::text, '') as elegibilidade,
+                           COALESCE("id plano club pj"::text, '') as id_plano_club_pj,
+                           COALESCE("data cancelamento"::text, '') as data_cancelamento,
+                           COALESCE("data ativação original"::text, '') as data_ativacao_original,
+                           COALESCE("fornecedora"::text, '') as fornecedora,
+                           COALESCE("desconto cliente"::text, '') as desconto_cliente,
+                           COALESCE("data nascimento"::text, '') as data_nascimento,
+                           COALESCE("Origem"::text, '') as origem,
+                           COALESCE("Forma de pagamento"::text, '') as forma_pagamento,
+                           COALESCE("Status Financeiro"::text, '') as status_financeiro,
+                           COALESCE("Login Distribuidora"::text, '') as login_distribuidora,
+                           COALESCE("Senha Distribuidora"::text, '') as senha_distribuidora,
+                           COALESCE("Cliente"::text, '') as cliente,
+                           COALESCE("Representante"::text, '') as representante,
+                           COALESCE("nacionalidade"::text, '') as nacionalidade,
+                           COALESCE("profissao"::text, '') as profissao,
+                           COALESCE("estadocivil"::text, '') as estadocivil,
+                           COALESCE("forma pagamento"::text, '') as forma_pagamento_2,
+                           COALESCE("Observação Compartilhada"::text, '') as observacao_compartilhada,
+                           COALESCE("Auto Conexão"::text, '') as auto_conexao,
+                           COALESCE("Link assinatura"::text, '') as link_assinatura,
+                           COALESCE("Link Documentos"::text, '') as link_documentos,
+                           COALESCE("Data Validado Sucesso"::text, '') as data_validado_sucesso,
+                           COALESCE("Devolutiva interna"::text, '') as devolutiva_interna
+                    FROM public."V_CUSTOMER"
+                    WHERE "data ativo" IS NOT NULL"""
+                
+                # Construir query final baseada nos parâmetros
                 if consolidated:
                     print("Executando query consolidada...")
-                    query_result = conn.execute(text("""
-                        SELECT "código"::text as codigo,
-                               COALESCE("nome"::text, '') as nome,
-                               COALESCE("data ativo"::text, '') as data_ativo,
-                               COALESCE("instalacao"::text, '') as instalacao,
-                               COALESCE("celular"::text, '') as celular,
-                               COALESCE("cidade"::text, '') as cidade,
-                               COALESCE("região"::text, '') as regiao,
-                               COALESCE("média consumo"::text, '') as media_consumo,
-                               COALESCE("devolutiva"::text, '') as devolutiva,
-                               COALESCE("data cadastro"::text, '') as data_cadastro,
-                               COALESCE("cpf"::text, '') as cpf,
-                               COALESCE("numero cliente"::text, '') as numero_cliente,
-                               COALESCE("data ult. alteração"::text, '') as data_ult_alteracao,
-                               COALESCE("celular 2"::text, '') as celular_2,
-                               COALESCE("email"::text, '') as email,
-                               COALESCE("rg"::text, '') as rg,
-                               COALESCE("orgão emissor"::text, '') as orgao_emissor,
-                               COALESCE("data injeção"::text, '') as data_injecao,
-                               COALESCE("id licenciado"::text, '') as id_licenciado,
-                               COALESCE("licenciado"::text, '') as licenciado,
-                               COALESCE("celular consultor"::text, '') as celular_consultor,
-                               COALESCE("cep"::text, '') as cep,
-                               COALESCE("endereco"::text, '') as endereco,
-                               COALESCE("numero"::text, '') as numero,
-                               COALESCE("bairro"::text, '') as bairro,
-                               COALESCE("complemento"::text, '') as complemento,
-                               COALESCE("cnpj"::text, '') as cnpj,
-                               COALESCE("razao"::text, '') as razao,
-                               COALESCE("fantasia"::text, '') as fantasia,
-                               COALESCE("UF consumo"::text, '') as uf_consumo,
-                               COALESCE("classificacao"::text, '') as classificacao,
-                               COALESCE("chave contrato"::text, '') as chave_contrato,
-                               COALESCE("chave assinatura cliente"::text, '') as chave_assinatura_cliente,
-                               COALESCE("chave solatio"::text, '') as chave_solatio,
-                               COALESCE("cashback"::text, '') as cashback,
-                               COALESCE("codigo solatio"::text, '') as codigo_solatio,
-                               COALESCE("enviado comerc"::text, '') as enviado_comerc,
-                               COALESCE("obs"::text, '') as obs,
-                               COALESCE("posvenda"::text, '') as posvenda,
-                               COALESCE("retido"::text, '') as retido,
-                               COALESCE("verificado"::text, '') as verificado,
-                               COALESCE("rateio"::text, '') as rateio,
-                               COALESCE("validado sucesso"::text, '') as validado_sucesso,
-                               COALESCE("status sucesso"::text, '') as status_sucesso,
-                               COALESCE("doc. enviado"::text, '') as doc_enviado,
-                               COALESCE("link Documento"::text, '') as link_documento,
-                               COALESCE("link Conta Energia"::text, '') as link_conta_energia,
-                               COALESCE("link Cartão CNPJ"::text, '') as link_cartao_cnpj,
-                               COALESCE("link Documento Frente"::text, '') as link_documento_frente,
-                               COALESCE("link Documento Verso"::text, '') as link_documento_verso,
-                               COALESCE("link Conta Energia 2"::text, '') as link_conta_energia_2,
-                               COALESCE("link Contrato Social"::text, '') as link_contrato_social,
-                               COALESCE("link Comprovante de pagamento"::text, '') as link_comprovante_pagamento,
-                               COALESCE("link Estatuto Convenção"::text, '') as link_estatuto_convencao,
-                               COALESCE("senha pdf"::text, '') as senha_pdf,
-                               COALESCE("usuario ult alteracao"::text, '') as usuario_ult_alteracao,
-                               COALESCE("elegibilidade"::text, '') as elegibilidade,
-                               COALESCE("id plano club pj"::text, '') as id_plano_club_pj,
-                               COALESCE("data cancelamento"::text, '') as data_cancelamento,
-                               COALESCE("data ativação original"::text, '') as data_ativacao_original,
-                               COALESCE("fornecedora"::text, '') as fornecedora,
-                               COALESCE("desconto cliente"::text, '') as desconto_cliente,
-                               COALESCE("data nascimento"::text, '') as data_nascimento,
-                               COALESCE("Origem"::text, '') as origem,
-                               COALESCE("Forma de pagamento"::text, '') as forma_pagamento,
-                               COALESCE("Status Financeiro"::text, '') as status_financeiro,
-                               COALESCE("Login Distribuidora"::text, '') as login_distribuidora,
-                               COALESCE("Senha Distribuidora"::text, '') as senha_distribuidora,
-                               COALESCE("Cliente"::text, '') as cliente,
-                               COALESCE("Representante"::text, '') as representante,
-                               COALESCE("nacionalidade"::text, '') as nacionalidade,
-                               COALESCE("profissao"::text, '') as profissao,
-                               COALESCE("estadocivil"::text, '') as estadocivil,
-                               COALESCE("forma pagamento"::text, '') as forma_pagamento_2,
-                               COALESCE("Observação Compartilhada"::text, '') as observacao_compartilhada,
-                               COALESCE("Auto Conexão"::text, '') as auto_conexao,
-                               COALESCE("Link assinatura"::text, '') as link_assinatura,
-                               COALESCE("Link Documentos"::text, '') as link_documentos,
-                               COALESCE("Data Validado Sucesso"::text, '') as data_validado_sucesso,
-                               COALESCE("Devolutiva interna"::text, '') as devolutiva_interna
-                        FROM public."V_CUSTOMER"
-                        WHERE "data ativo" IS NOT NULL
-                        ORDER BY "código" ASC
-                    """))
+                    where_clause = ""
                 else:
                     if date_filter:
                         year, month = date_filter.split('-')
                         date_format = f"{month}/{year}"
                         print(f"Executando query mensal: {date_format}")
-                        
-                        query_result = conn.execute(text("""
-                            SELECT "código"::text as codigo,
-                                   COALESCE("nome"::text, '') as nome,
-                                   COALESCE("data ativo"::text, '') as data_ativo,
-                                   COALESCE("instalacao"::text, '') as instalacao,
-                                   COALESCE("celular"::text, '') as celular,
-                                   COALESCE("cidade"::text, '') as cidade,
-                                   COALESCE("região"::text, '') as regiao,
-                                   COALESCE("média consumo"::text, '') as media_consumo,
-                                   COALESCE("devolutiva"::text, '') as devolutiva,
-                                   COALESCE("data cadastro"::text, '') as data_cadastro,
-                                   COALESCE("cpf"::text, '') as cpf,
-                                   COALESCE("numero cliente"::text, '') as numero_cliente,
-                                   COALESCE("data ult. alteração"::text, '') as data_ult_alteracao,
-                                   COALESCE("celular 2"::text, '') as celular_2,
-                                   COALESCE("email"::text, '') as email,
-                                   COALESCE("rg"::text, '') as rg,
-                                   COALESCE("orgão emissor"::text, '') as orgao_emissor,
-                                   COALESCE("data injeção"::text, '') as data_injecao,
-                                   COALESCE("id licenciado"::text, '') as id_licenciado,
-                                   COALESCE("licenciado"::text, '') as licenciado,
-                                   COALESCE("celular consultor"::text, '') as celular_consultor,
-                                   COALESCE("cep"::text, '') as cep,
-                                   COALESCE("endereco"::text, '') as endereco,
-                                   COALESCE("numero"::text, '') as numero,
-                                   COALESCE("bairro"::text, '') as bairro,
-                                   COALESCE("complemento"::text, '') as complemento,
-                                   COALESCE("cnpj"::text, '') as cnpj,
-                                   COALESCE("razao"::text, '') as razao,
-                                   COALESCE("fantasia"::text, '') as fantasia,
-                                   COALESCE("UF consumo"::text, '') as uf_consumo,
-                                   COALESCE("classificacao"::text, '') as classificacao,
-                                   COALESCE("chave contrato"::text, '') as chave_contrato,
-                                   COALESCE("chave assinatura cliente"::text, '') as chave_assinatura_cliente,
-                                   COALESCE("chave solatio"::text, '') as chave_solatio,
-                                   COALESCE("cashback"::text, '') as cashback,
-                                   COALESCE("codigo solatio"::text, '') as codigo_solatio,
-                                   COALESCE("enviado comerc"::text, '') as enviado_comerc,
-                                   COALESCE("obs"::text, '') as obs,
-                                   COALESCE("posvenda"::text, '') as posvenda,
-                                   COALESCE("retido"::text, '') as retido,
-                                   COALESCE("verificado"::text, '') as verificado,
-                                   COALESCE("rateio"::text, '') as rateio,
-                                   COALESCE("validado sucesso"::text, '') as validado_sucesso,
-                                   COALESCE("status sucesso"::text, '') as status_sucesso,
-                                   COALESCE("doc. enviado"::text, '') as doc_enviado,
-                                   COALESCE("link Documento"::text, '') as link_documento,
-                                   COALESCE("link Conta Energia"::text, '') as link_conta_energia,
-                                   COALESCE("link Cartão CNPJ"::text, '') as link_cartao_cnpj,
-                                   COALESCE("link Documento Frente"::text, '') as link_documento_frente,
-                                   COALESCE("link Documento Verso"::text, '') as link_documento_verso,
-                                   COALESCE("link Conta Energia 2"::text, '') as link_conta_energia_2,
-                                   COALESCE("link Contrato Social"::text, '') as link_contrato_social,
-                                   COALESCE("link Comprovante de pagamento"::text, '') as link_comprovante_pagamento,
-                                   COALESCE("link Estatuto Convenção"::text, '') as link_estatuto_convencao,
-                                   COALESCE("senha pdf"::text, '') as senha_pdf,
-                                   COALESCE("usuario ult alteracao"::text, '') as usuario_ult_alteracao,
-                                   COALESCE("elegibilidade"::text, '') as elegibilidade,
-                                   COALESCE("id plano club pj"::text, '') as id_plano_club_pj,
-                                   COALESCE("data cancelamento"::text, '') as data_cancelamento,
-                                   COALESCE("data ativação original"::text, '') as data_ativacao_original,
-                                   COALESCE("fornecedora"::text, '') as fornecedora,
-                                   COALESCE("desconto cliente"::text, '') as desconto_cliente,
-                                   COALESCE("data nascimento"::text, '') as data_nascimento,
-                                   COALESCE("Origem"::text, '') as origem,
-                                   COALESCE("Forma de pagamento"::text, '') as forma_pagamento,
-                                   COALESCE("Status Financeiro"::text, '') as status_financeiro,
-                                   COALESCE("Login Distribuidora"::text, '') as login_distribuidora,
-                                   COALESCE("Senha Distribuidora"::text, '') as senha_distribuidora,
-                                   COALESCE("Cliente"::text, '') as cliente,
-                                   COALESCE("Representante"::text, '') as representante,
-                                   COALESCE("nacionalidade"::text, '') as nacionalidade,
-                                   COALESCE("profissao"::text, '') as profissao,
-                                   COALESCE("estadocivil"::text, '') as estadocivil,
-                                   COALESCE("forma pagamento"::text, '') as forma_pagamento_2,
-                                   COALESCE("Observação Compartilhada"::text, '') as observacao_compartilhada,
-                                   COALESCE("Auto Conexão"::text, '') as auto_conexao,
-                                   COALESCE("Link assinatura"::text, '') as link_assinatura,
-                                   COALESCE("Link Documentos"::text, '') as link_documentos,
-                                   COALESCE("Data Validado Sucesso"::text, '') as data_validado_sucesso,
-                                   COALESCE("Devolutiva interna"::text, '') as devolutiva_interna
-                            FROM public."V_CUSTOMER"
-                            WHERE to_char("data ativo", 'MM/YYYY') = :date_format
-                            ORDER BY "código" ASC
-                        """), {'date_format': date_format})
+                        where_clause = " AND to_char(\"data ativo\", 'MM/YYYY') = :date_format"
+                    else:
+                        return jsonify({'error': 'Filtro de data é obrigatório para consulta não consolidada'}), 400
+                
+                # Query completa com ordenação consistente
+                full_query = base_select + where_clause + " ORDER BY \"código\" ASC"
+                
+                # Adicionar LIMIT apenas para prévia
+                if preview:
+                    full_query += " LIMIT 50"
+                
+                # Executar query
+                if consolidated or not date_filter:
+                    query_result = conn.execute(text(full_query))
+                else:
+                    query_result = conn.execute(text(full_query), {'date_format': date_format})
             
             if query_result is None:
                 return jsonify({'error': 'Nenhum dado encontrado'}), 404
@@ -330,10 +263,23 @@ def export_card_data(card_name):
             if not rows:
                 return jsonify({'error': 'Nenhum registro encontrado'}), 404
             
-            print(f"Processando {len(rows)} registros...")
-            
             # Obter nomes das colunas
             column_names = list(query_result.keys())
+            
+            # Se for uma requisição de prévia, retornar dados em JSON
+            if preview:
+                print(f"Retornando prévia com {len(rows)} registros...")
+                data = []
+                for row in rows:
+                    row_dict = {}
+                    for i, value in enumerate(row):
+                        row_dict[column_names[i]] = value if value else ''
+                    data.append(row_dict)
+                
+                return jsonify({'data': data, 'count': len(data)}), 200
+            
+            # Caso contrário, gerar Excel
+            print(f"Processando {len(rows)} registros para Excel...")
             
             # Criar arquivo Excel
             print("Criando arquivo Excel...")
@@ -375,9 +321,9 @@ def export_card_data(card_name):
             excel_buffer.seek(0)
             
             # Nome do arquivo com timestamp
-            # Garantir period seguro quando date_filter for None
-            period = 'consolidado' if consolidated else (date_filter.replace('-', '') if date_filter else 'sem_periodo')
+            from datetime import datetime
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            period = 'consolidado' if consolidated else date_filter.replace('-', '')
             filename = f"total_ativacoes_{period}_{timestamp}.xlsx"
             
             print(f"Enviando arquivo: {filename}")

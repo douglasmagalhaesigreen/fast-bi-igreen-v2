@@ -6,13 +6,14 @@ import { Toaster } from 'react-hot-toast';
 // Contexts
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 
-// Layouts e Páginas com os caminhos JÁ CORRIGIDOS
-import MainLayout from './components/layout/MainLayout'; 
+// Layouts e Páginas
+import MainLayout from './components/layout/MainLayout';
 import Login from './features/auth/Login';
-import DashboardTV from './pages/DashboardTV'; // Assumindo que este ainda não foi movido
+import DashboardTV from './pages/DashboardTV';
 import AreaSelection from './pages/AreaSelection';
-import ProtectedRoute from './features/auth/components/ProtectedRoute'; // Caminho corrigido
+import ProtectedRoute from './features/auth/components/ProtectedRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,46 +31,48 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <Toaster
-              position="top-right"
-              reverseOrder={false}
-            />
-            
-            <Routes>
-              {/* Rota Pública */}
-              <Route path="/login" element={<Login />} />
+          <SettingsProvider>
+            <Router>
+              <Toaster
+                position="top-right"
+                reverseOrder={false}
+              />
+              
+              <Routes>
+                {/* Rota Pública */}
+                <Route path="/login" element={<Login />} />
 
-              {/* Rotas Protegidas */}
-              <Route
-                path="/area-selection"
-                element={
-                  <ProtectedRoute>
-                    <AreaSelection />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-tv"
-                element={
-                  <ProtectedRoute>
-                    <DashboardTV />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Rotas Protegidas */}
+                <Route
+                  path="/area-selection"
+                  element={
+                    <ProtectedRoute>
+                      <AreaSelection />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard-tv"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardTV />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Redirecionamentos */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Router>
+                {/* Redirecionamentos */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Router>
+          </SettingsProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

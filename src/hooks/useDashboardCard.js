@@ -5,6 +5,7 @@ export const useDashboardCard = (cardName, selectedDate) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (!cardName || !selectedDate) return;
@@ -44,7 +45,7 @@ export const useDashboardCard = (cardName, selectedDate) => {
   }, [cardName, selectedDate]);
 
   const exportData = async () => {
-    if (exporting) return; // Prevenir múltiplas exportações simultâneas
+    if (exporting) return;
     
     setExporting(true);
     
@@ -62,10 +63,8 @@ export const useDashboardCard = (cardName, selectedDate) => {
       });
 
       if (response.ok) {
-        // Para download de Excel, tratar como blob
         const blob = await response.blob();
         
-        // Extrair nome do arquivo do header ou criar um padrão
         const contentDisposition = response.headers.get('Content-Disposition');
         let filename = `${cardName}_${consolidated ? 'consolidado' : selectedDate}.xlsx`;
         
@@ -76,7 +75,6 @@ export const useDashboardCard = (cardName, selectedDate) => {
           }
         }
         
-        // Criar link para download
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -99,7 +97,24 @@ export const useDashboardCard = (cardName, selectedDate) => {
     }
   };
 
-  return { data, loading, error, exportData, exporting };
+  const openPreview = () => {
+    console.log('openPreview chamado - abrindo modal');
+    setShowPreview(true);
+  };
 
-  return { data, loading, error, exportData };
+  const closePreview = () => {
+    console.log('closePreview chamado - fechando modal');
+    setShowPreview(false);
+  };
+
+  return { 
+    data, 
+    loading, 
+    error, 
+    exportData, 
+    exporting,
+    showPreview,
+    openPreview,
+    closePreview
+  };
 };

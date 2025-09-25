@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Download, ChevronDown, Users } from 'lucide-react';
 import MetricCard from '../../components/dashboard/MetricCard';
+import ExportPreviewModal from '../../components/dashboard/ExportPreviewModal';
 import { useDashboardCard } from '../../hooks/useDashboardCard';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState('consolidated');
@@ -11,6 +13,9 @@ const Dashboard = () => {
 
   // Hook para buscar dados do card Total de Ativações
   const totalAtivacoes = useDashboardCard('total_ativacoes', selectedDate);
+  
+  // Context de configurações
+  const { settings } = useSettings();
 
   // Buscar datas disponíveis ao carregar o componente
   useEffect(() => {
@@ -42,10 +47,13 @@ const Dashboard = () => {
     fetchAvailableDates();
   }, []);
 
-  // Função para exportar Excel (será implementada)
-  const exportToExcel = (cardType) => {
-    console.log(`Exportando ${cardType} para Excel - Período: ${selectedDate === 'consolidated' ? 'Consolidado' : selectedDate}`);
-    // TODO: Implementar exportação Excel
+  // Função para lidar com clique no card
+  const handleCardClick = () => {
+    if (settings.showExportPreview) {
+      totalAtivacoes.openPreview();
+    } else {
+      totalAtivacoes.exportData();
+    }
   };
 
   // Obter label da data selecionada
@@ -152,10 +160,20 @@ const Dashboard = () => {
           format="number"
           loading={totalAtivacoes.loading}
           exporting={totalAtivacoes.exporting}
-          onClick={() => totalAtivacoes.exportData()}
+          onClick={handleCardClick}
           clickable={true}
         />
       </div>
+
+      {/* Modal de Prévia de Exportação */}
+      <ExportPreviewModal
+        isOpen={totalAtivacoes.showPreview}
+        onClose={totalAtivacoes.closePreview}
+        cardName="total_ativacoes"
+        cardTitle="Total de Ativações"
+        selectedDate={selectedDate}
+        onDownload={totalAtivacoes.exportData}
+      />
 
       {/* Overlay para fechar dropdown */}
       {isDropdownOpen && (
