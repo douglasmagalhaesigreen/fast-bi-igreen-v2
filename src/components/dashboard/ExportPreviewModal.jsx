@@ -11,13 +11,14 @@ const ExportPreviewModal = ({
   selectedDate,
   onDownload 
 }) => {
-  const [data, setData] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [downloading, setDownloading] = useState(false);
   
-  const itemsPerPage = 50; // Alterado de 50 para 50
+  const itemsPerPage = 50;
 
   useEffect(() => {
     if (isOpen && cardName) {
@@ -56,7 +57,20 @@ const ExportPreviewModal = ({
 
       if (response.ok) {
         const result = await response.json();
-        setData(result.data || []);
+        
+        // ✅ NOVO FORMATO: Backend envia columns + rows separadamente
+        if (result.columns && result.rows) {
+          setColumns(result.columns);
+          setRows(result.rows);
+          console.log('✅ Ordem das colunas preservada:', result.columns.slice(0, 5));
+        } else {
+          // Fallback para formato antigo (se houver)
+          const data = result.data || [];
+          if (data.length > 0) {
+            setColumns(Object.keys(data[0]));
+            setRows(data.map(row => Object.values(row)));
+          }
+        }
       } else {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
@@ -83,38 +97,13 @@ const ExportPreviewModal = ({
     }
   };
 
-  const getPaginatedData = () => {
+  const getPaginatedRows = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return data.slice(startIndex, startIndex + itemsPerPage);
+    return rows.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const paginatedData = getPaginatedData();
-  
-  // Definir ordem fixa das colunas para garantir consistência
-  const columnOrder = [
-    'codigo', 'nome', 'data_ativo', 'instalacao', 'celular', 'cidade', 'regiao', 
-    'media_consumo', 'devolutiva', 'data_cadastro', 'cpf', 'numero_cliente', 
-    'data_ult_alteracao', 'celular_2', 'email', 'rg', 'orgao_emissor', 'data_injecao',
-    'id_licenciado', 'licenciado', 'celular_consultor', 'cep', 'endereco', 'numero',
-    'bairro', 'complemento', 'cnpj', 'razao', 'fantasia', 'uf_consumo', 'classificacao',
-    'chave_contrato', 'chave_assinatura_cliente', 'chave_solatio', 'cashback',
-    'codigo_solatio', 'enviado_comerc', 'obs', 'posvenda', 'retido', 'verificado',
-    'rateio', 'validado_sucesso', 'status_sucesso', 'doc_enviado', 'link_documento',
-    'link_conta_energia', 'link_cartao_cnpj', 'link_documento_frente', 'link_documento_verso',
-    'link_conta_energia_2', 'link_contrato_social', 'link_comprovante_pagamento',
-    'link_estatuto_convencao', 'senha_pdf', 'usuario_ult_alteracao', 'elegibilidade',
-    'id_plano_club_pj', 'data_cancelamento', 'data_ativacao_original', 'fornecedora',
-    'desconto_cliente', 'data_nascimento', 'origem', 'forma_pagamento', 'status_financeiro',
-    'login_distribuidora', 'senha_distribuidora', 'cliente', 'representante', 'nacionalidade',
-    'profissao', 'estadocivil', 'forma_pagamento_2', 'observacao_compartilhada',
-    'auto_conexao', 'link_assinatura', 'link_documentos', 'data_validado_sucesso', 'devolutiva_interna'
-  ];
-  
-  // Usar apenas colunas que existem nos dados, na ordem definida
-  const columns = data.length > 0 ? 
-    columnOrder.filter(col => col in data[0]) : 
-    [];
+  const totalPages = Math.ceil(rows.length / itemsPerPage);
+  const paginatedRows = getPaginatedRows();
 
   if (!isOpen) return null;
 
@@ -147,7 +136,7 @@ const ExportPreviewModal = ({
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedDate === 'consolidated' ? 'Dados consolidados' : `Período: ${selectedDate.replace(/(\d{4})-(\d{2})/, '$2/$1')}`}
-                  {data.length > 0 && ` • Primeiros ${Math.min(data.length, 50)} registros exibidos`}
+                  {rows.length > 0 && ` • Primeiros ${Math.min(rows.length, 50)} registros exibidos • ${columns.length} colunas`}
                 </p>
               </div>
             </div>
@@ -155,7 +144,7 @@ const ExportPreviewModal = ({
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleDownload}
-                disabled={loading || downloading || data.length === 0}
+                disabled={loading || downloading || rows.length === 0}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 
                          text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -198,7 +187,7 @@ const ExportPreviewModal = ({
                   </button>
                 </div>
               </div>
-            ) : data.length === 0 ? (
+            ) : rows.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                   <FileSpreadsheet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -212,9 +201,9 @@ const ExportPreviewModal = ({
                   <table className="w-full text-sm min-w-max">
                     <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700 z-10">
                       <tr>
-                        {columns.map((column) => (
+                        {columns.map((column, index) => (
                           <th
-                            key={column}
+                            key={`col-${index}`}
                             className="text-left p-3 font-medium text-gray-900 dark:text-white border-b dark:border-gray-600 whitespace-nowrap min-w-[120px]"
                           >
                             {column}
@@ -223,18 +212,18 @@ const ExportPreviewModal = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedData.map((row, index) => (
+                      {paginatedRows.map((row, rowIndex) => (
                         <tr
-                          key={index}
+                          key={`row-${rowIndex}`}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700 last:border-b-0"
                         >
-                          {columns.map((column) => (
+                          {row.map((cellValue, cellIndex) => (
                             <td
-                              key={column}
+                              key={`cell-${rowIndex}-${cellIndex}`}
                               className="p-3 text-gray-700 dark:text-gray-300 whitespace-nowrap min-w-[120px] max-w-[200px] truncate"
-                              title={row[column]}
+                              title={cellValue}
                             >
-                              {row[column] || '-'}
+                              {cellValue || '-'}
                             </td>
                           ))}
                         </tr>
@@ -247,7 +236,7 @@ const ExportPreviewModal = ({
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between mt-6 pt-4 border-t dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, data.length)} de {data.length.toLocaleString('pt-BR')} registros
+                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, rows.length)} de {rows.length.toLocaleString('pt-BR')} registros
                     </p>
                     
                     <div className="flex items-center space-x-2">

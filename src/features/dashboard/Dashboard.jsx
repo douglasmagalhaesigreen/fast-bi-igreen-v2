@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Download, ChevronDown, Users } from 'lucide-react';
+import { Calendar, Download, ChevronDown, Users, Activity } from 'lucide-react';
 import MetricCard from '../../components/dashboard/MetricCard';
 import ExportPreviewModal from '../../components/dashboard/ExportPreviewModal';
 import { useDashboardCard } from '../../hooks/useDashboardCard';
@@ -11,6 +11,9 @@ const Dashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // ✅ NOVO Hook para buscar dados do card Total de Cadastrados
+  const clientesCadastrados = useDashboardCard('clientes_cadastrados', selectedDate);
+  
   // Hook para buscar dados do card Total de Ativações
   const totalAtivacoes = useDashboardCard('total_ativacoes', selectedDate);
   
@@ -47,8 +50,17 @@ const Dashboard = () => {
     fetchAvailableDates();
   }, []);
 
-  // Função para lidar com clique no card
-  const handleCardClick = () => {
+  // ✅ Função para lidar com clique no card de Cadastrados
+  const handleCadastradosClick = () => {
+    if (settings.showExportPreview) {
+      clientesCadastrados.openPreview();
+    } else {
+      clientesCadastrados.exportData();
+    }
+  };
+
+  // Função para lidar com clique no card de Ativações
+  const handleAtivacoesClick = () => {
     if (settings.showExportPreview) {
       totalAtivacoes.openPreview();
     } else {
@@ -151,21 +163,49 @@ const Dashboard = () => {
 
       {/* Cards Container */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card: Total de Ativações */}
+        
+        {/* ✅ NOVO CARD: Total de Cadastrados (À ESQUERDA) */}
         <MetricCard
-          title="Total de Ativações"
-          value={totalAtivacoes.data?.value}
+          title="Total de Cadastrados"
+          value={clientesCadastrados.data?.value}
+          change={clientesCadastrados.data?.change}
           icon={Users}
           color="blue"
           format="number"
-          loading={totalAtivacoes.loading}
-          exporting={totalAtivacoes.exporting}
-          onClick={handleCardClick}
+          loading={clientesCadastrados.loading}
+          exporting={clientesCadastrados.exporting}
+          onClick={handleCadastradosClick}
           clickable={true}
         />
+
+        {/* Card: Total de Ativações (À DIREITA) */}
+        <MetricCard
+          title="Total de Ativações"
+          value={totalAtivacoes.data?.value}
+          change={totalAtivacoes.data?.change}
+          icon={Activity}
+          color="green"
+          format="number"
+          loading={totalAtivacoes.loading}
+          exporting={totalAtivacoes.exporting}
+          onClick={handleAtivacoesClick}
+          clickable={true}
+        />
+        
+        {/* Espaço para cards futuros */}
       </div>
 
-      {/* Modal de Prévia de Exportação */}
+      {/* ✅ Modal de Prévia para Clientes Cadastrados */}
+      <ExportPreviewModal
+        isOpen={clientesCadastrados.showPreview}
+        onClose={clientesCadastrados.closePreview}
+        cardName="clientes_cadastrados"
+        cardTitle="Total de Cadastrados"
+        selectedDate={selectedDate}
+        onDownload={clientesCadastrados.exportData}
+      />
+
+      {/* Modal de Prévia para Total de Ativações */}
       <ExportPreviewModal
         isOpen={totalAtivacoes.showPreview}
         onClose={totalAtivacoes.closePreview}
